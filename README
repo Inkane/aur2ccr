@@ -1,10 +1,8 @@
-Under construction...
-
 aur2ccr - 
 	pull Arch packages from AUR or source files from Arch repos,
 	and make source packages ready for uploading to CCR
 
-Todo: add the ability to grab packages from Arch repos; 
+Todo: 	add the ability to grab packages from Arch repos; 
 	add ability to search for packages in AUR as well as Arch repos;
 	add ability to grab *.src.tar.gz CCR files and put them all in one place;
 

@@ -203,6 +203,7 @@ function pkgsearch {
 	printf '[community]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[core]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[extra]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[multilib]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n' > pacman.conf.tmp
 	pacman -Ss $1 --config pacman.conf.tmp
 	sudo pacman -Sy >&2> /dev/null &
+	rm pacman.conf.tmp
 	exit 0
 }
 
