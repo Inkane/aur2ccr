@@ -1,0 +1,222 @@
+# #!/bin/bash
+# aur2ccr - pull arch PKGBUILDs from AUR and make Chakra src packages
+# version 0.2 - by george
+# Usage: aur2ccr [AUR-PACKAGE-NAMES]
+# Todo: add the ability to grab packages from Arch repos; 
+#       add better error checking for packages not in AUR or Arch repos;
+#       add ability to search for packages in AUR/Arch repos instead of just failing (see above); 
+#       add ability to grab *.src.tar.gz CCR files and put them all in one place;
+# This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
+
+startdir=`pwd`
+badpkgs=0
+
+for bin in ccr makepkg; do	# test for important programs that may not be installed
+	if test -x "$(which $bin 2>/dev/null)"; then
+		continue
+	else
+		echo "aur2ccr: Sorry, you need '$bin' to use this script."
+		exit 1
+	fi
+done
+
+function isinccr {	# check in CCR and main repos for package
+	if !(ccr -Ssq $1 | grep -q "^$1$"); then
+		if (pacman -Ssq $1 | grep -q "^$1$"); then 
+			return 0
+		else
+			return 1
+		fi
+	else
+		return 0
+	fi
+}
+
+function isinaur {
+	if !(echo "$1" | grep -q '^..'); then  # if the package name is not at least 2 chars, checking aur will fail.
+		echo "aur2ccr: Package names must be at least two characters in length"
+		exit 1
+	fi
+	if (wget -q --spider https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD); then
+		return 0
+	else 
+		return 1
+	fi
+}
+
+function isinarchr {
+	echo "Checking Arch repos..."
+	if [ -z "$archreplist" ]; then
+		printf '[community]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[core]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[extra]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[multilib]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n' > pacman.conf.tmp
+		sudo pacman -Sy --config pacman.conf.tmp # this requires root privileges, so it is not the best solution. If anyone thinks of something better, let me know.
+		if (pacman -Ssq --config pacman.conf.tmp $1 | grep -q "^$1$"); then
+			archreplist="$(pacman -Ssq --config pacman.conf.tmp)"
+			rm pacman.conf.tmp
+			sudo pacman -Sy >&2> /dev/null &
+			return 0
+		else
+			archreplist="$(pacman -Ssq --config pacman.conf.tmp)"
+			rm pacman.conf.tmp
+			sudo pacman -Sy >&2> /dev/null &
+			return 1
+		fi
+	else
+		if (echo "$archreplist" | grep -q "^$1$"); then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
+function depends {
+	depends=$(grep '^depends=' PKGBUILD | sed "s/depends=('\(.*\)')/\1/; s/'//g")
+	depends="$depends $(grep '^makedepends=' PKGBUILD | sed "s/makedepends=('\(.*\)')/\1/; s/'//g")"
+}
+
+function addmaintainer {
+	ed -s PKGBUILD << EOF | sed 's/#\sContributer/ Previous Maintainer/'
+1s/Maintainer/Contributer
+1i
+# Maintainer: $1
+.
+wq
+EOF
+}
+
+function makeccrpkg {		# grab a package from AUR, and make it into a CCR-ready src package
+	pkgname=$1
+	mkdir -p $pkgname
+	cd $pkgname
+	if test -r $pkgname.tar.gz; then 
+		rm $pkgname.tar.gz
+	fi
+	wget https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz
+	tar -xzf $pkgname.tar.gz && rm $pkgname.tar.gz
+	cd $pkgname
+	depsnotinccr=0
+	depends
+	for pkg in $depends; do 
+		if isinccr $pkg; then 
+			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		else
+			let depsnotinccr=$depsnotinccr+1
+			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+			if isinaur $pkg; then
+				makeccrpkg $pkg
+			elif isinarchr $pkg; then
+				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
+				#makeccrpkg_r $pkg
+			else
+				echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
+			fi
+		fi
+	done
+	if [ "$depsnotinccr" -eq 0 ]; then
+		echo "Testing package '$pkgname'..."
+		if !(makepkg -sf); then
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			let badpkgs=$badpkgs+1
+		fi
+	else
+		echo "Package '$pkgname' has dependencies outside of CCR or Chakra repos."
+		echo "Running 'makepkg -s' on this package will fail, so we cannot test it now."
+		echo "Please test the final .src.tar.gz package manually with ccr."
+	fi
+	if [ -n "$maintainer" ]; then
+		echo "aur2ccr: Changing maintainer information..."
+		addmaintainer "$maintainer"
+		echo "aur2ccr: Done"
+	fi
+	if (makepkg --source -f); then
+		echo "aur2ccr: Package '$pkgname' built successfully."
+	else
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		let badpkgs=$badpkgs+1
+	fi
+	cd $startdir
+}
+
+function makeccrpkg_r {		# grab a package from Arch repos, and make it into a CCR-ready src package
+	mkdir -p $pkgname
+	cd $pkgname
+	if test -r PKGBUILD; then 
+		wget -O PKGBUILD.1.tmp https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/PKGBUILD
+		mv PKGBUILD.1.tmp PKGBUILD
+	else
+		wget https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/PKGBUILD
+	fi
+	if (makepkg --source); then 
+		depends
+		for pkg in $depends; do 
+			if isinccr $pkg; then 
+				echo "aur2ccr: $pkgname dependency $pkg already in CCR or repos, continuing"
+			else
+				echo "aur2ccr: $pkgname dependency $pkg not in CCR or repos, looking at Arch packages"
+				makeccrpkg $pkg
+			fi
+		done
+	else
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		let badpkgs=$badpkgs+1
+	fi
+	cd $startdir
+}
+
+function pkgsearch {
+	echo "Package '$1' not found in AUR or Arch repos."
+	echo "Did you mean: "
+	echo " ... will be added later ... "
+	exit 1
+}
+
+function checkaur {
+	if isinaur $1; then 
+		makeccrpkg $1
+	else
+		if isinarchr $1; then
+			echo "'$1' is in Arch repos, but this feature is not yet ready."
+		#	makeccrpkg_r $1
+		else 
+			pkgsearch $1
+		fi
+	fi
+}
+
+# main()
+if [ -z "$1" -o "$1" == "-h" -o "$1" == "--help" ]; then	# if no arguments were supplied, print usage info
+	echo "Usage: $0 [OPTIONS] [PACKAGES]"
+	echo "Create CCR-ready source packages from packages in AUR or Arch repos"
+	echo "Example: $0 twisted"
+	echo "Options: "
+	echo "  -m		the script will ask for maintainer info to add to PKGBUILDs"
+	exit 0
+fi
+
+if (echo "$@" | grep -q '\-m ' || echo "$@" | grep -q '\-m$') ; then
+	if [ -z "$maintainer" ]; then
+		echo "Please enter maintainer info now, in the form: My Name <myemail@example.com>"
+		echo -n "> "
+		read maintainer
+	fi
+	args=$(echo "$@" | sed 's/\(.*\)-m\s\(.*\)/\1\2/; s/\(.*\)-m$/\1/')
+else
+	args="$@"
+fi
+
+for pkgname in $args; do 
+	if isinccr $pkgname; then
+		echo "$pkgname is already in CCR or main Chakra repos."
+		echo -n "Continue anyway? [Y/n] "
+		read ans
+		if [ -z "$ans" -o "$ans" == "y" -o "$ans" == "Y" ]; then 
+			checkaur $pkgname
+		else 
+			echo "Skipping $pkgname"
+			continue
+		fi
+	else
+		checkaur $pkgname
+	fi
+done
+echo "aur2ccr: $badpkgs package(s) failed"
