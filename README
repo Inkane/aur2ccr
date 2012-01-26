@@ -1,10 +1,12 @@
 aur2ccr - 
-	pull Arch packages from AUR or source files from Arch repos,
-	and make source packages ready for uploading to CCR
+	Pull Arch packages from AUR or source files from Arch repos,
+	and make source packages that are ready for uploading to CCR.
 
 Todo: 	add the ability to grab packages from Arch repos; 
 	add ability to search for packages in AUR as well as Arch repos;
-	add ability to grab *.src.tar.gz CCR files and put them all in one place;
+	add signal handling with bash traps;
+	add -u option to allow the user to specify the URL of a source package to build;
+	add the ability to automatically upload packages to CCR (if possible);
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from 
 http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
