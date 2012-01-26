@@ -1,10 +1,9 @@
 # #!/bin/bash
 # aur2ccr - pull arch PKGBUILDs from AUR and make Chakra src packages
-# version 0.3
+# version 0.3.1
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
-#       add better error checking for packages not in AUR or Arch repos;
-#       add ability to search for packages in AUR/Arch repos instead of just failing (see above); 
+#       add ability to search for packages in AUR as well as Arch repos;
 #       add ability to grab *.src.tar.gz CCR files and put them all in one place;
 # This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 
@@ -57,7 +56,6 @@ function isinarchr {
 		else
 			archreplist="$(pacman -Ssq --config pacman.conf.tmp)"
 			rm pacman.conf.tmp
-			sudo pacman -Sy >&2> /dev/null &
 			return 1
 		fi
 	else
@@ -199,10 +197,13 @@ function makeccrpkg_r {		# grab a package from Arch repos, and make it into a CC
 }
 
 function pkgsearch {
+	# this function should NEVER be called except right after isinarchr!
 	echo "Package '$1' not found in AUR or Arch repos."
 	echo "Did you mean: "
-	echo " ... will be added later ... "
-	exit 1
+	printf '[community]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[core]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[extra]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[multilib]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n' > pacman.conf.tmp
+	pacman -Ss $1 --config pacman.conf.tmp
+	sudo pacman -Sy >&2> /dev/null &
+	exit 0
 }
 
 function checkaur {
