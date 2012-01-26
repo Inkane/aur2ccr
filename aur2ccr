@@ -1,7 +1,7 @@
 # #!/bin/bash
 # aur2ccr - pull arch PKGBUILDs from AUR and make Chakra src packages
-# version 0.2 - by george
-# Usage: aur2ccr [AUR-PACKAGE-NAMES]
+# version 0.3
+# Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
 #       add better error checking for packages not in AUR or Arch repos;
 #       add ability to search for packages in AUR/Arch repos instead of just failing (see above); 
@@ -138,24 +138,59 @@ function makeccrpkg {		# grab a package from AUR, and make it into a CCR-ready s
 }
 
 function makeccrpkg_r {		# grab a package from Arch repos, and make it into a CCR-ready src package
+	pkgname=$1
 	mkdir -p $pkgname
 	cd $pkgname
-	if test -r PKGBUILD; then 
-		wget -O PKGBUILD.1.tmp https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/PKGBUILD
-		mv PKGBUILD.1.tmp PKGBUILD
-	else
-		wget https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/PKGBUILD
+	if test -r $pkgname.tar.gz; then 
+		rm $pkgname.tar.gz
 	fi
-	if (makepkg --source); then 
-		depends
-		for pkg in $depends; do 
-			if isinccr $pkg; then 
-				echo "aur2ccr: $pkgname dependency $pkg already in CCR or repos, continuing"
-			else
-				echo "aur2ccr: $pkgname dependency $pkg not in CCR or repos, looking at Arch packages"
+	#
+	#	get Arch package with PKGBUILD, .install, etc, using git or perl script
+	#
+	# extract the package if needed
+	cd $pkgname #this should cd to wherever the stuff above put the PKGBUILD
+	depsnotinccr=0
+	depends
+	for pkg in $depends; do 
+		if isinccr $pkg; then 
+			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		else
+			let depsnotinccr=$depsnotinccr+1
+			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+			if isinaur $pkg; then
 				makeccrpkg $pkg
+			elif isinarchr $pkg; then
+				echo -n #dummy
+				#makeccrpkg_r $pkg
+			else
+				echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
 			fi
-		done
+		fi
+	done
+	if (makepkg -gf); then	# this may be wrong, I can't test it until we get it to download the needed stuff from Arch repos.
+		echo "aur2ccr: md5sums for '$pkgname' updated, urls OK"
+	else
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		let badpkgs=$badpkgs+1
+	fi
+	if [ "$depsnotinccr" -eq 0 ]; then
+		echo "Testing package '$pkgname'..."
+		if !(makepkg -sf); then
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			let badpkgs=$badpkgs+1
+		fi
+	else
+		echo "Package '$pkgname' has dependencies outside of CCR or Chakra repos."
+		echo "Running 'makepkg -s' on this package will fail, so we cannot test it now."
+		echo "Please test the final .src.tar.gz package manually with ccr."
+	fi
+	if [ -n "$maintainer" ]; then
+		echo "aur2ccr: Changing maintainer information..."
+		addmaintainer "$maintainer"
+		echo "aur2ccr: Done"
+	fi
+	if (makepkg --source -f); then
+		echo "aur2ccr: Package '$pkgname' built successfully."
 	else
 		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
 		let badpkgs=$badpkgs+1
