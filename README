@@ -5,7 +5,7 @@ aur2ccr -
 Todo: 	add the ability to grab packages from Arch repos; 
 	add ability to search for packages in AUR as well as Arch repos;
 	add signal handling with bash traps;
-	add -u option to allow the user to specify the URL of a source package to build;
+	add option to specify the URL of an AUR/CCR-compat source package to convert to CCR;
 	add the ability to automatically upload packages to CCR (if possible);
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from 
