@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.5
+# aur2ccr - version 0.5.1
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
@@ -10,8 +10,13 @@
 #	add the ability to automatically upload packages to CCR (if possible);
 # This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 
+# internal settings
 pname="aur2ccr"
 pver="0.5"
+confdir="/etc/aur2ccr"
+namesconf="names.conf"
+
+# initialize variables
 startdir="$(pwd)"
 badpkgs=0
 consolidate=0
@@ -96,7 +101,7 @@ depends() {
 	depends="$(echo "$depends" | sed "s/\(.*\))/\1/")"   # depends=('every' 'single' 'dependency')
 	odepends=$depends; depends=
 	for depend in $odepends; do # get rid of packagename>=V.E.R stuff
-		depends="$depends $newline $(echo $depend | sed 's/\(.*\)>.*/\1/')"
+		depends="$depends $(echo $depend | sed 's/\(.*\)>.*/\1/')"
 	done
 }
 
@@ -140,6 +145,15 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 	for pkg in $depends; do 
 		if isinccr $pkg; then 
 			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		elif namelookup $pkg; then
+			if isinccr $cpkgname; then
+				echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+			else 
+				echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+				echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
+				let badpkgs=$badpkgs+1
+				return 1
+			fi
 		else
 			let depsnotinccr=$depsnotinccr+1
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
@@ -164,7 +178,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 	done
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
-		if !(makepkg -sf); then
+		if !(makepkg -sfr); then
 			echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 			failedpkgs="$failedpkgs $pkgname"
@@ -218,6 +232,15 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 	for pkg in $depends; do 
 		if isinccr $pkg; then 
 			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		elif namelookup $pkg; then
+			if isinccr $cpkgname; then
+				echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+			else 
+				echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+				echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
+				let badpkgs=$badpkgs+1
+				return 1
+			fi
 		else
 			let depsnotinccr=$depsnotinccr+1
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
@@ -242,7 +265,7 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 	done
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
-		if !(makepkg -sf); then
+		if !(makepkg -sfr); then
 			echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 			failedpkgs="$failedpkgs $pkgname"
@@ -309,6 +332,15 @@ makeccrpkg_u() {
 	for pkg in $depends; do 
 		if isinccr $pkg; then 
 			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		elif namelookup $pkg; then
+			if isinccr $cpkgname; then
+				echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+			else 
+				echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+				echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
+				let badpkgs=$badpkgs+1
+				return 1
+			fi
 		else
 			let depsnotinccr=$depsnotinccr+1
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
@@ -333,7 +365,7 @@ makeccrpkg_u() {
 	done
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
-		if !(makepkg -sf); then
+		if !(makepkg -sfr); then
 			echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 			failedpkgs="$failedpkgs $pkgname"
@@ -399,6 +431,15 @@ makeccrpkg_f() {
 	for pkg in $depends; do 
 		if isinccr $pkg; then 
 			echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+		elif namelookup $pkg; then
+			if isinccr $cpkgname; then
+				echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+			else 
+				echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+				echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
+				let badpkgs=$badpkgs+1
+				return 1
+			fi
 		else
 			let depsnotinccr=$depsnotinccr+1
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
@@ -423,7 +464,7 @@ makeccrpkg_f() {
 	done
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
-		if !(makepkg -sf); then
+		if !(makepkg -sfr); then
 			echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 			failedpkgs="$failedpkgs $pkgname"
@@ -455,6 +496,20 @@ makeccrpkg_f() {
 	return 0
 }
 
+namelookup() {	# see https://github.com/redhat69/aur2ccr/issues/1
+	if test -r "$confdir/$namesconf"; then
+		if (grep -q "$1=..*" "$confdir/$namesconf"); then
+			apkgname="$1"
+			cpkgname="$(grep "^$1=..*" "$confdir/$namesconf" | sed "s/$1=//")"
+		else
+			return 1
+		fi
+	else 
+		return 1
+	fi
+	return 0
+}
+
 pkgsearch() {
 	# this function should NEVER be called except right after isinarchr!
 	echo "Package '$1' not found in AUR or Arch repos."
@@ -475,7 +530,19 @@ checkaur() {
 	else
 		if isinarchr $1; then
 			echo "'$1' is in Arch repos, but this feature is not yet ready."
+			let badpkgs=$badpkgs+1
+			failedpkgs="$failedpkgs $1"
 		#	makeccrpkg_r $1
+#		elif isinaur "$(namelookup $1)"; then
+#			if !(makeccrpkg "$apkgname"); then
+#				let badpkgs=$badpkgs+1
+#				failedpkgs="$failedpkgs $1"
+#			fi
+#		elif isinarchr "$(namelookup $1)"; then
+#			echo "'$1' is in Arch repos, but this feature is not yet ready."
+#			let badpkgs=$badpkgs+1
+#			failedpkgs="$failedpkgs $1"
+#		#	makeccrpkg_r $1
 		else 
 			pkgsearch $1
 		fi
@@ -555,9 +622,19 @@ popopts "$@"
 
 trap clean INT	# trap keyboard interrupts (^C), in order to clean up temp files
 
-for pkgname in $args; do 
+for pkgname in $args; do
 	if isinccr $pkgname; then
 		echo "$pkgname is already in CCR or main Chakra repos."
+		echo -n "Continue anyway? [y/N] "
+		read ans
+		if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
+			echo "Skipping $pkgname"
+			continue
+		else 
+			checkaur $pkgname
+		fi
+	elif namelookup $pkgname; then
+		echo "$apkgname is already in CCR or main Chakra repos as $cpkgname."
 		echo -n "Continue anyway? [y/N] "
 		read ans
 		if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
