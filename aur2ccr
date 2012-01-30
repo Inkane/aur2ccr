@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.4.8
+# aur2ccr - version 0.4.9
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
@@ -92,6 +92,8 @@ depends() {
 	depends="$(echo "$depends" | sed "s/depends=(['\"]*)//")"
 	depends="$(echo "$depends" | sed "s/depends=(\([^'\"]*\))/\1/")"
 	depends="$(echo "$depends" | sed "s/makedepends=(\([^'\"]*\))/\1/")"
+	depends="$(echo "$depends" | sed "s/.*(\(.*\)/\1/")" # PLEASE, just quote your depends! It's not that hard! 
+	depends="$(echo "$depends" | sed "s/\(.*\))/\1/")"   # depends=('every' 'single' 'dependency')
 	odepends=$depends; depends=
 	for depend in $odepends; do # get rid of packagename>=V.E.R stuff
 		depends="$depends $(echo $depend | sed 's/\(.*\)>.*/\1/')"
@@ -110,6 +112,7 @@ EOF
 
 makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src package
 	pkgname=$1
+	cd "$startdir"
 	mkdir -p "$pkgname"
 	cd "$pkgname"
 	if test -r "$pkgname.tar.gz"; then 
@@ -142,6 +145,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 				makeccrpkg $pkg
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
+				let badpkgs=$badpkgs+1
 				#makeccrpkg_r $pkg
 			else
 				echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
@@ -180,6 +184,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 
 makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready src package
 	pkgname=$1
+	cd "$startdir"
 	mkdir -p "$pkgname"
 	cd "$pkgname"
 	if test -r "$pkgname.tar.gz"; then 
@@ -245,6 +250,7 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 
 makeccrpkg_u() {
 	pkgname="$(basename "$url" | sed 's/\([^\.]\)\..*/\1/')"
+	cd "$startdir"
 	mkdir -p "$pkgname"
 	cd "$pkgname"
 	myfile="$BASHPID-$(basename "$url")"
@@ -281,6 +287,7 @@ makeccrpkg_u() {
 				makeccrpkg $pkg
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
+				let badpkgs=$badpkgs+1
 				#makeccrpkg_r $pkg
 			else
 				echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
@@ -318,6 +325,7 @@ makeccrpkg_u() {
 }
 
 makeccrpkg_f() {
+	cd "$startdir"
 	if ! test -r "$file"; then
 		echo "aur2ccr: '$file' cannot be opened or does not exist"
 		let badpkgs=$badpkgs+1
@@ -354,6 +362,7 @@ makeccrpkg_f() {
 				makeccrpkg $pkg
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
+				let badpkgs=$badpkgs+1
 				#makeccrpkg_r $pkg
 			else
 				echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
