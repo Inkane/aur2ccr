@@ -112,9 +112,12 @@ EOF
 
 makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src package
 	pkgname=$1
+	pwd; sleep 1
 	cd "$startdir"
+        pwd; sleep 1
 	mkdir -p "$pkgname"
 	cd "$pkgname"
+	pwd; sleep 1
 	if test -r "$pkgname.tar.gz"; then 
 		rm "$pkgname.tar.gz"
 	fi
@@ -129,6 +132,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 		return 1
 	fi
 	cd "$pkgname"
+	pwd; sleep 1
 	depsnotinccr=0
 	if [ "$edit" -eq 1 ]; then
 		echo "aur2ccr: Opening '$pkgname' PKGBUILD with $EDITOR"
@@ -143,6 +147,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
 			if isinaur $pkg; then
 				makeccrpkg $pkg
+				cd "$opkgdir" # this only works if the depends don't have depends. could somebody please find a better way?
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
 				let badpkgs=$badpkgs+1
@@ -152,10 +157,11 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 			fi
 		fi
 	done
+	pwd; sleep 1
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
 		if !(makepkg -sf); then
-			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 		fi
 	else
@@ -176,7 +182,7 @@ makeccrpkg() {		# grab a package from AUR, and make it into a CCR-ready src pack
 			echo "aur2ccr: $pkgpkg moved to $startdir"
 		fi
 	else
-		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 		let badpkgs=$badpkgs+1
 	fi
 	cd "$startdir"
@@ -209,6 +215,7 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
 			if isinaur $pkg; then
 				makeccrpkg $pkg
+				cd "$opkgdir"
 			elif isinarchr $pkg; then
 				echo -n #dummy
 				#makeccrpkg_r $pkg
@@ -220,13 +227,14 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 	if (makepkg -gf); then	# this may be wrong, I can't test it until we get it to download the needed stuff from Arch repos.
 		echo "aur2ccr: md5sums for '$pkgname' updated, urls OK"
 	else
-		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
+                pwd
 		let badpkgs=$badpkgs+1
 	fi
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
 		if !(makepkg -sf); then
-			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 		fi
 	else
@@ -242,7 +250,7 @@ makeccrpkg_r() {		# grab a package from Arch repos, and make it into a CCR-ready
 	if (makepkg --source -f); then
 		echo "aur2ccr: Package '$pkgname' built successfully."
 	else
-		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 		let badpkgs=$badpkgs+1
 	fi
 	cd "$startdir"
@@ -284,7 +292,8 @@ makeccrpkg_u() {
 			let depsnotinccr=$depsnotinccr+1
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
 			if isinaur $pkg; then
-				makeccrpkg $pkg
+				makeccrpkg 
+				cd "$opkgdir"
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
 				let badpkgs=$badpkgs+1
@@ -297,7 +306,7 @@ makeccrpkg_u() {
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
 		if !(makepkg -sf); then
-			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 		fi
 	else
@@ -318,7 +327,7 @@ makeccrpkg_u() {
 			echo "aur2ccr: $pkgpkg moved to $startdir"
 		fi
 	else
-		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 		let badpkgs=$badpkgs+1
 	fi
 	cd "$startdir"
@@ -360,6 +369,7 @@ makeccrpkg_f() {
 			echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
 			if isinaur $pkg; then
 				makeccrpkg $pkg
+				cd "$opkgdir"
 			elif isinarchr $pkg; then
 				echo "'$pkg' is in the Arch repos, but this feature is not ready yet."
 				let badpkgs=$badpkgs+1
@@ -372,7 +382,7 @@ makeccrpkg_f() {
 	if [ "$depsnotinccr" -eq 0 ]; then
 		echo "Testing package '$pkgname'..."
 		if !(makepkg -sf); then
-			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+			echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 			let badpkgs=$badpkgs+1
 		fi
 	else
@@ -393,7 +403,7 @@ makeccrpkg_f() {
 			echo "aur2ccr: $pkgpkg moved to $startdir"
 		fi
 	else
-		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD"
+		echo "aur2ccr: Some error occured, check the $pkgname PKGBUILD in $(pwd)"
 		let badpkgs=$badpkgs+1
 	fi
 	cd "$startdir"
@@ -412,6 +422,7 @@ pkgsearch() {
 
 checkaur() {
 	if isinaur $1; then 
+		opkgdir="$(pwd)/$1/$1"
 		makeccrpkg $1
 	else
 		if isinarchr $1; then
