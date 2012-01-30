@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.4.7
+# aur2ccr - version 0.4.8
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
@@ -86,8 +86,16 @@ isinarchr() {
 }
 
 depends() {
-	depends=$(grep '^depends=' PKGBUILD | sed "s/depends=('\(.*\)')/\1/; s/'//g")
-	depends="$depends $(grep '^makedepends=' PKGBUILD | sed "s/makedepends=('\(.*\)')/\1/; s/'//g")"
+	depends=$(grep '^depends=' PKGBUILD | sed "s/depends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")
+	depends="$depends $(grep '^makedepends=' PKGBUILD | sed "s/makedepends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")"
+	depends="$(echo "$depends" | sed "s/makedepends=(['\"]*)//")"
+	depends="$(echo "$depends" | sed "s/depends=(['\"]*)//")"
+	depends="$(echo "$depends" | sed "s/depends=(\([^'\"]*\))/\1/")"
+	depends="$(echo "$depends" | sed "s/makedepends=(\([^'\"]*\))/\1/")"
+	odepends=$depends; depends=
+	for depend in $odepends; do # get rid of packagename>=V.E.R stuff
+		depends="$depends $(echo $depend | sed 's/\(.*\)>.*/\1/')"
+	done
 }
 
 addmaintainer() {
@@ -501,3 +509,4 @@ fi; if [ -n "$file" ]; then
 fi
 
 echo "aur2ccr: $badpkgs package(s) failed"
+
