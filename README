@@ -3,6 +3,8 @@ aur2ccr -
 	packages that are ready for uploading to CCR.
 
 Todo: 	add the ability to grab packages from Arch repos; 
+	add the ability to use a text database to look up packages named
+		differently in AUR/Arch than Chakra/CCR. (Eg, python->python3);
 	add ability to search for packages in AUR as well as Arch repos;
 	add man page aur2ccr(8);
 	improve popopts function, to allow options to be used like '-ce';
