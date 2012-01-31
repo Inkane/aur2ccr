@@ -3,7 +3,6 @@ aur2ccr -
 	packages that are ready for uploading to CCR.
 
 Todo: 	add the ability to grab packages from Arch repos; 
-	add ability to search for packages in AUR as well as Arch repos;
 	add man page aur2ccr(8);
 	improve popopts function, to allow options to be used like '-ce';
 	add the ability to automatically upload packages to CCR (if possible);
