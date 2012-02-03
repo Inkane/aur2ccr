@@ -208,6 +208,10 @@ dotherest() {
       fi
     elif namelookup $pkg; then
       namelookup $pkg
+      if !(namechange $pkg); then
+        echo "aur2ccr: Something went wrong while attempting to edit the $pkg PKGBUILD"
+        return 1
+      fi
       if isinccr $cpkgname; then
         echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
         if !(isinrepos $cpkgname); then
@@ -448,6 +452,21 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
     return 1
   fi
   return 0
+}
+
+namechange() {
+  local pkg=$1
+  depends
+  for pkg in $depends; do 
+    if namelookup $pkg; then
+      namelookup $pkg
+      if (sed -i "s/\(=[(\s'\"]*\)${apkgname}\([\s'\")]*\)/\1${cpkgname}\2/g" PKGBUILD); then
+        return 0
+      else
+        return 1
+      fi
+    fi
+  done
 }
 
 aursearch() {  # uses 'packer'
