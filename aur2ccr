@@ -29,10 +29,11 @@ addad=0
 archrinit=0
 newline='
 '
-RED=
-BLUE=
+RED='\e[0;31m'
+BLUE='\e[0;34m'
+programs=( abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer )
 
-for bin in abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer; do  # test for important programs that may not be installed 
+for bin in ${programs[@]}; do  # test for important programs that may not be installed 
   if test -x "$(which $bin 2>/dev/null)"; then
     continue
   else
