@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.5.4
+# aur2ccr - version 0.5.5
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: add the ability to grab packages from Arch repos; 
@@ -12,7 +12,7 @@
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.5.4"
+pver="0.5.5"
 confdir="/etc/aur2ccr"
 lconfdir="~/.aur2ccr"
 tmpdir="/tmp"
@@ -112,6 +112,14 @@ isinccr() {  # check in CCR and main repos for package
   fi
 }
 
+isinrepos() {  # check in main Chakra repos for package
+  if (pacman -Ssq $1 | grep -q "^$1$"); then 
+    return 0
+  else
+    return 1
+  fi
+}
+
 isinaur() {
   if !(echo "$1" | grep -q '^..'); then  # if the package name is not at least 2 chars, checking aur will fail.
     echo "aur2ccr: Package names must be at least two characters in length"
@@ -195,9 +203,16 @@ dotherest() {
   for pkg in $depends; do 
     if isinccr $pkg; then 
       echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+      if !(isinrepos $pkg); then
+        let depsnotinrep=$depsnotinrep+1
+      fi
     elif namelookup $pkg; then
+      namelookup $pkg
       if isinccr $cpkgname; then
         echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+        if !(isinrepos $cpkgname); then
+          let depsnotinrep=$depsnotinrep+1
+        fi
       else 
         echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
         echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
@@ -205,7 +220,7 @@ dotherest() {
         return 1
       fi
     else
-      let depsnotinccr=$depsnotinccr+1
+      let depsnotinrep=$depsnotinrep+1
       echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
       if isinaur $pkg; then
         pushd "$(pwd)" >/dev/null
@@ -215,7 +230,7 @@ dotherest() {
           popd >/dev/null
           return 1
         else
-          popd
+          popd >/dev/null
         fi
       elif isinarchr $pkg; then
         echo "aur2ccr: '$pkg' found in the Arch repos..."
@@ -236,7 +251,7 @@ dotherest() {
       fi
     fi
   done
-  if [ "$depsnotinccr" -eq 0 ]; then
+  if [ "$depsnotinrep" -eq 0 ]; then
     echo "Testing package '$pkgname'..."
     if !(makepkg -sfr); then
       echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
