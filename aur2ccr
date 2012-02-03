@@ -194,7 +194,7 @@ EOF
 
 dotherest() {
   local pkgname=$1
-  depsnotinccr=0
+  depsnotinrep=0
   if [ "$edit" -eq 1 ]; then
     echo "aur2ccr: Opening '$pkgname' PKGBUILD with $EDITOR"
     $EDITOR PKGBUILD
