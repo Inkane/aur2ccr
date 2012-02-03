@@ -460,7 +460,7 @@ namechange() {
   for pkg in $depends; do 
     if namelookup $pkg; then
       namelookup $pkg
-      if (sed -i "s/\(=[(\s'\"]*\)${apkgname}\([\s'\")]*\)/\1${cpkgname}\2/g" PKGBUILD); then
+      if (sed -i "s/\([(\s'\"]*\)${apkgname}\([\s'\")]*\)/\1${cpkgname}\2/g" PKGBUILD); then
         return 0
       else
         return 1
