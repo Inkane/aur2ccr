@@ -47,7 +47,7 @@ for bin in ${programs[@]}; do  # test for important programs that may not be ins
 done
 
 msg() { # make aur2ccr's messages prettier and more unified.
-  echo -n $BLUE[$a2c]  $RESET
+  echo -n $BLUE[$a2c:]  $RESET
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
@@ -514,9 +514,9 @@ checkaur() {
 }
 
 usage() {
-  echo "Usage: $0 [OPTIONS] [PACKAGES]"
+  echo "Usage: $a2c [OPTIONS] [PACKAGES]"
   echo "Create CCR-ready source packages from packages in AUR or Arch repos"
-  echo "Example: $0 twisted"
+  echo "Example: $a2c twisted"
   echo 
   echo "Options: "
   echo "  -m <maintainer>	add maintainer information to each PKGBUILD before building"
