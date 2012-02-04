@@ -668,7 +668,7 @@ fi; if [ -n "$file" ]; then
   makeccrpkg_f
 fi
 
-err
+infmsg
 echo "$badpkgs package(s) failed"
 if [ -n "$failedpkgs" ]; then 
   infmsg
