@@ -35,18 +35,8 @@ GREEN='[0;32m'
 RESET='[0;37;40m'
 programs=( abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer )
 a2c="aur2ccr"
-
-for bin in ${programs[@]}; do  # test for important programs that may not be installed 
-  if test -x "$(which $bin 2>/dev/null)"; then
-    continue
-  else
-    echo "Sorry, you need '$bin' to use this script."
-    echo "Try running: sudo pacman -Sy abs base-devel ccr packer"
-    exit 1
-  fi
-done
-
 msg() { # make aur2ccr's messages prettier and more unified.
+
   echo -n $BLUE[$a2c:]  $RESET
 }
 
@@ -57,6 +47,19 @@ err() { # make aur2ccr's error messages prettier and more unified.
 infmsg() { # beautify aur2ccr's info messages
   echo -n $GREEN[$a2c::INFO]  $RESET 
 }
+
+
+for bin in ${programs[@]}; do  # test for important programs that may not be installed 
+  if test -x "$(which $bin 2>/dev/null)"; then
+    continue
+  else
+    infmsg
+    echo "Sorry, you need '$bin' to use this script."
+    infmsg
+    echo "Try running: sudo pacman -Sy abs base-devel ccr packer"
+    exit 1
+  fi
+done
 
 clean() {  # clean up temp files
   if [ -z "$1" ]; then
@@ -78,6 +81,7 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
     sudo pacman -Sy >&2> /dev/null
     rm pacman.conf.tmp
   else
+    err
     echo "aur2ccr: An error occurred while checking Arch repos."
     rm pacman.conf.tmp
     exit 1 # you can't call this in an if, (like if initarchr) because the vars will be unset
@@ -105,6 +109,7 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
     fi
   done
   if [ "$ret" == 0 ]; then
+    infmsg
     echo " (nothing found)"
   fi
 }
@@ -131,7 +136,8 @@ isinrepos() {  # check in main Chakra repos for package
 
 isinaur() {
   if !(echo "$1" | grep -q '^..'); then  # if the package name is not at least 2 chars, checking aur will fail.
-    echo "aur2ccr: Package names must be at least two characters in length"
+    err
+    echo "Package names must be at least two characters in length"
     exit 1
   fi
   if (wget -q --spider https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD); then
@@ -143,7 +149,8 @@ isinaur() {
 
 
 isinarchr() {
-  echo "aur2ccr: Checking Arch repos..."
+  infmsg
+  echo "Checking Arch repos..."
   if [ "$archrinit" == 0 ]; then
     initarchr  
   fi # we don't need an else, the rest is below and the vars are already set
@@ -159,7 +166,8 @@ getarchname() {
   if isinarchr $1; then
     archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g')
   else
-    echo "aur2ccr: '$1' not found in arch repos"
+    infmsg
+    echo "'$1' not found in arch repos"
     return 1
   fi
 }
@@ -193,7 +201,7 @@ EOF
 }
 
 addad() {
-  ed -s PKGBUILD << EOF && echo "aur2ccr: Ad added. Thanks for supporing aur2ccr! :)"
+  ed -s PKGBUILD << EOF && msg && echo "Ad added. Thanks for supporing aur2ccr! :)"
 2i
 # Contributer: aur2ccr (http://chakra.sourceforge.net/ccr/packages.php?K=aur2ccr)
 .
@@ -205,96 +213,120 @@ dotherest() {
   local pkgname=$1
   depsnotinrep=0
   if [ "$edit" -eq 1 ]; then
-    echo "aur2ccr: Opening '$pkgname' PKGBUILD with $EDITOR"
+    infmsg
+    echo "Opening '$pkgname' PKGBUILD with $EDITOR"
     $EDITOR PKGBUILD
   fi
   depends
   for pkg in $depends; do 
     if isinccr $pkg; then 
-      echo "aur2ccr: $pkgname dependency '$pkg' already in CCR or repos, continuing"
+      infmsg
+      echo "$pkgname dependency '$pkg' already in CCR or repos, continuing"
       if !(isinrepos $pkg); then
         let depsnotinrep=$depsnotinrep+1
       fi
     elif namelookup $pkg; then
       namelookup $pkg
       if !(namechange $pkg); then
-        echo "aur2ccr: Something went wrong while attempting to edit the $pkg PKGBUILD"
+        err
+        echo "Something went wrong while attempting to edit the $pkg PKGBUILD"
         return 1
       fi
       if isinccr $cpkgname; then
-        echo "aur2ccr: $pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+        infmsg
+        echo "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
         if !(isinrepos $cpkgname); then
           let depsnotinrep=$depsnotinrep+1
         fi
       else 
-        echo "aur2ccr: There seems to be a bad definition in $confdir/$namesconf. Please fix this."
-        echo "aur2ccr: The offending line is: '$apkgname=$cpkgname'"
+        err
+        echo "There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+        infmsg
+        echo "The offending line is: '$apkgname=$cpkgname'"
         let badpkgs=$badpkgs+1
         return 1
       fi
     else
       let depsnotinrep=$depsnotinrep+1
-      echo "aur2ccr: $pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+      infmsg
+      echo "$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
       if isinaur $pkg; then
         pushd "$(pwd)" >/dev/null
         if !(makeccrpkg $pkg); then
-          echo "aur2ccr: Some error occurred while building '$pkg'"
-          echo "aur2ccr: Without this dependency, $pkgname cannot be built"
+          err
+          echo "Some error occurred while building '$pkg'"
+          err
+          echo "Without this dependency, $pkgname cannot be built"
           popd >/dev/null
           return 1
         else
           popd >/dev/null
         fi
       elif isinarchr $pkg; then
-        echo "aur2ccr: '$pkg' found in the Arch repos..."
+        infmsg
+        echo "'$pkg' found in the Arch repos..."
         pushd "$(pwd)" >/dev/null
         if !(makeccrpkg_r $pkg); then 
-          echo "aur2ccr: Some error occurred while building '$pkg'"
-          echo "aur2ccr: Without this dependency, $pkgname cannot be built"
+          err
+          echo "Some error occurred while building '$pkg'"
+          err
+          echo "Without this dependency, $pkgname cannot be built"
           popd >/dev/null
           return 1
         else
           popd >/dev/null
         fi
       else
-        echo "aur2ccr: Sorry, dependency '$pkg' cannot be found."
-        echo "aur2ccr: Without this dependency, $pkgname cannot be built"
+        msg
+        echo "Sorry, dependency '$pkg' cannot be found."
+        err
+        echo "Without this dependency, $pkgname cannot be built"
         let badpkgs=$badpkgs+1
         return 1
       fi
     fi
   done
   if [ "$depsnotinrep" -eq 0 ]; then
+    infmsg
     echo "Testing package '$pkgname'..."
     if !(makepkg -sfr); then
-      echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+      err
+      echo "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $pkgname"
       return 1
     fi
   else
-    echo "aur2ccr: Package '$pkgname' has dependencies outside of CCR or Chakra repos."
-    echo "aur2ccr: Running 'makepkg -s' on this package will fail, so we cannot test it now."
-    echo "aur2ccr: Please test the final .src.tar.gz package manually with ccr."
+    infmsg
+    echo "Package '$pkgname' has dependencies outside of CCR or Chakra repos."
+    infmsg
+    echo "Running 'makepkg -s' on this package will fail, so we cannot test it now."
+    infmsg
+    echo "Please test the final .src.tar.gz package manually with ccr." # maybe better ask the user to test it with pacman
   fi
   if [ -n "$maintainer" ]; then
-    echo "aur2ccr: Changing maintainer information..."
+    infmsg
+    echo "Changing maintainer information..."
     addmaintainer "$maintainer"
-    echo "aur2ccr: Done"
+    infmsg
+    echo "Done"
   fi
   if [ "$addad" == 1 ]; then
     addad
   fi
   makepkg -gf
   if (makepkg --source -f); then
-    echo "aur2ccr: Package '$pkgname' built successfully."
+    infmsg
+    echo "Package '$pkgname' built successfully."
     if [ "$consolidate" -eq 1 ]; then
       pkgpkg="$(ls $pkgname*.src.tar.gz)"
       mv $pkgpkg "$startdir"
-      echo "aur2ccr: $pkgpkg moved to $startdir"
+      infmsg
+      echo "$pkgpkg moved to $startdir"
     fi
   else
-    echo "aur2ccr: Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+    err
+    echo "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -311,13 +343,15 @@ makeccrpkg() {    # grab a package from AUR, and make it into a CCR-ready src pa
     rm "$pkgname.tar.gz"
   fi
   if !(wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz"); then
-    echo "aur2ccr: There was an error while trying to download the package."
+    err
+    echo "There was an error while trying to download the package."
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   if !(tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz"); then
-    echo "aur2ccr: tar could not extract the archive"
+    err
+    echo "tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -347,26 +381,32 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
   #
   getarchname $pkgname
   if [ "$archname" == 0 ]; then
-    echo "aur2ccr: '$pkgname' cannot be found"
+    err
+    echo "'$pkgname' cannot be found"
     return 1
   fi # else...
-  echo "aur2ccr: found '$pkgname' as '$archname'"
+  infmsg
+  echo "found '$pkgname' as '$archname'"
   if (sudo abs "$archname"); then
     rm -rf "./$pkgname"
     if (sudo mv "/var/abs/$archname" "./$pkgname"); then
       if (sudo chown -hR $USER:$GROUP "./$pkgname"); then
-        echo "aur2ccr: $pkgname info retrieved from Arch repos successfully"
+        infmsg
+        echo "$pkgname info retrieved from Arch repos successfully"
       else
-        echo "aur2ccr: chown failed"
+        err
+        echo "chown failed"
 	return 1
       fi
     else
-      echo "aur2ccr: could not move /var/abs/$archname to working dir"
+      err
+      echo "could not move /var/abs/$archname to working dir"
       let badpkgs=$badpkgs+1
       return 1
     fi
   else
-    echo "aur2ccr: abs failed"
+    err
+    echo "abs failed"
     let badpkgs=$badpkgs+1
     return 1
   fi
@@ -388,21 +428,24 @@ makeccrpkg_u() {
   cd "$pkgname"
   myfile="$BASHPID-$(basename "$url")"
   if !(wget -O "$myfile" "$url"); then 
-    echo "aur2ccr: There was an error while trying to download the package"
+    err
+    echo "There was an error while trying to download the package"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   dir="$(tar -taf "$myfile" | head -1)"
   if !(tar -xaf "$myfile"); then
-    echo "aur2ccr: tar could not extract the archive"
+    err
+    echo "tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   cd "$dir"
   if ! test -r PKGBUILD; then
-    echo "aur2ccr: The package you specified does not seem to be a valid source archive."
+    err
+    echo "The package you specified does not seem to be a valid source archive."
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -418,7 +461,8 @@ makeccrpkg_u() {
 makeccrpkg_f() {
   cd "$startdir"
   if ! test -r "$file"; then
-    echo "aur2ccr: '$file' cannot be opened or does not exist"
+    err
+    echo "'$file' cannot be opened or does not exist"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -427,7 +471,8 @@ makeccrpkg_f() {
   mkdir -p "$pkgname"
   dir="$(tar -taf "$file" | head -1)"
   if !(tar -xaf "$file" -C "$pkgname"); then
-    echo "aur2ccr: tar could not extract the archive"
+    err
+    echo "tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -497,13 +542,15 @@ pkgsearch() { # there is no reason for this function to ever be called except ri
 
 checkaur() {
   if isinaur $1; then 
-    echo "aur2ccr: '$1' found in AUR..."
+    infmsg
+    echo "'$1' found in AUR..."
     if !(makeccrpkg $1); then
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $1"
     fi
   elif isinarchr $1; then
-    echo "aur2ccr: '$1' found in the Arch repos..."
+    infmsg
+    echo "'$1' found in the Arch repos..."
     if !(makeccrpkg_r $1); then
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $1"
@@ -621,9 +668,12 @@ fi; if [ -n "$file" ]; then
   makeccrpkg_f
 fi
 
-echo "aur2ccr: $badpkgs package(s) failed"
+err
+echo "$badpkgs package(s) failed"
 if [ -n "$failedpkgs" ]; then 
-  echo "aur2ccr: The bad package(s) are:"
+  infmsg
+  echo "The bad package(s) are:"
+  infmsg
   echo -n "aur2ccr:"
   echo "$failedpkgs" >&2
 fi
