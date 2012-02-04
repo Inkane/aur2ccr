@@ -639,7 +639,9 @@ trap clean INT  # trap keyboard interrupts (^C), in order to clean up temp files
 
 for pkgname in $args; do
   if isinccr $pkgname; then
+    infmsg
     echo "$pkgname is already in CCR or main Chakra repos."
+    infmsg
     echo -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
@@ -649,10 +651,13 @@ for pkgname in $args; do
       checkaur $pkgname
     fi
   elif namelookup $pkgname; then
+    infmsg
     echo "$apkgname is already in CCR or main Chakra repos as $cpkgname."
+    infmsg
     echo -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
+      infmsg
       echo "Skipping $pkgname"
       continue
     else 
