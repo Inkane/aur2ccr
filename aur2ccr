@@ -29,9 +29,12 @@ addad=0
 archrinit=0
 newline='
 '
-RED='\e[0;31m'
-BLUE='\e[0;34m'
+RED='[0;31m'
+BLUE='[0;34m'
+GREEN='[0;32m'
+RESET='[0;37;40m'
 programs=( abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer )
+a2c="aur2ccr"
 
 for bin in ${programs[@]}; do  # test for important programs that may not be installed 
   if test -x "$(which $bin 2>/dev/null)"; then
@@ -44,16 +47,21 @@ for bin in ${programs[@]}; do  # test for important programs that may not be ins
 done
 
 msg() { # make aur2ccr's messages prettier and more unified.
-  echo -n #dummy
+  echo -n $BLUE[$a2c]  $RESET
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
-  echo -n #dummy
+  echo -n $RED[$RED[$a2c::ERROR]]  $RESET
+}
+
+infmsg() { # beautify aur2ccr's info messages
+  echo -n $GREEN[$a2c::INFO]  $RESET 
 }
 
 clean() {  # clean up temp files
   if [ -z "$1" ]; then
-    echo "aur2ccr: Keyboard interrupt caught, cleaning up..."
+    infmsg
+    echo "Keyboard interrupt caught, cleaning up..."
     rm -f pacman.conf.tmp
     exit 1
   else
