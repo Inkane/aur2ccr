@@ -41,7 +41,7 @@ msg() { # make aur2ccr's messages prettier and more unified.
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
-  echo -n $RED[$RED[$a2c::ERROR]]  $RESET
+  echo -n $RED[$RED$a2c::ERROR]  $RESET
 }
 
 infmsg() { # beautify aur2ccr's info messages
