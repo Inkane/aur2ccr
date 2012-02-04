@@ -645,6 +645,7 @@ for pkgname in $args; do
     echo -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
+      infmsg
       echo "Skipping $pkgname"
       continue
     else 
