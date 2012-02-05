@@ -375,7 +375,7 @@ dotherest() {
       return 1
     fi
   else
-    warn "Package '$pkgname' has dependencies outside of CCR or Chakra repos."
+    warn "Package '$pkgname' has dependencies outside of the Chakra repos."
     warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
     warn "Please test the final .src.tar.gz package manually with ccr."
   fi
