@@ -1,6 +1,7 @@
 # Makefile for aur2ccr
 manpages = aur2ccr.8.gz
 binfiles = aur2ccr
+unstable = aur2ccr-unstable
 configs = names.conf
 others = aur2ccr.8 Makefile
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
@@ -13,6 +14,12 @@ install: $(allfiles) install-man
 	install -d -m755 "$(DESTDIR)/usr/local/bin"
 	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
 	install -D -m755 $(binfiles) "$(DESTDIR)/usr/local/bin/"
+	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
+
+install-unstable: $(allfiles) install-man # this will install the aur2ccr-unstable script, use with caution
+	install -d -m755 "$(DESTDIR)/usr/local/bin"
+	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
+	install -D -m755 $(unstable) "$(DESTDIR)/usr/local/bin/"
 	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
 
 install-man: # 'make install' calls this, so only do 'make install-man' if all you want is the man page.
