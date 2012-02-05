@@ -8,7 +8,7 @@
 # Portions of this script may have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
 # Thanks to: 
 #  CaptainKnots for the github repo and the original idea behind aur2ccr;
-#  Inkane for submitting bug reports and feature requests;
+#  Inkane for submitting bug reports, feature requests, and code;
 #  abveritas for adding to the arch/chakra package name translations list;
 #  tetris4 and [jmc] for their support and help developing the script;
 #  the developers of ccr, packer, abs, and the other tools this script uses;
@@ -42,6 +42,7 @@ BLUE='\e[1;34m'
 YELLOW='\e[1;33m'
 RED='\e[1;31m'
 ENDCOLOR='\e[0m' 
+programs=( abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer )
 
 
 # output formatting functions
@@ -83,20 +84,6 @@ err() { # make aur2ccr's error messages prettier and more unified.
   fi
   echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
 }
-
-# test for important programs that may not be installed 
-for bin in abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer; do
-  debug "checking for $bin..."
-  if test -x "$(which $bin 2>/dev/null)"; then
-    debug " found"
-    continue
-  else
-    debug " not found"
-    err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr packer'"
-    exit 1
-  fi
-done
 
 clean() {  # clean up temp files
   debug "clean('$@')"
@@ -163,14 +150,10 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
 
 isinccr() {  # check in CCR and main repos for package
   debug "isinccr('$@')"
-  if !(ccr -Ssq $1 | grep -q "^$1$"); then
-    if (pacman -Ssq $1 | grep -q "^$1$"); then 
-      return 0
-    else
-      return 1
-    fi
-  else
+  if (ccr -Ssq $1 | grep -q "^$1$"); then
     return 0
+  else
+    return 1
   fi
 }
 
@@ -606,9 +589,9 @@ checkaur() {
 
 usage() {
   debug "usage('$@')"
-  echo "Usage: $0 [OPTIONS] [PACKAGES]"
+  echo "Usage: $(basename $0) [OPTIONS] [PACKAGES]" # is this better than $0?
   echo "Create CCR-ready source packages from packages in AUR or Arch repos"
-  echo "Example: $0 twisted"
+  echo "Example: $(basename $0) twisted"
   echo 
   echo "Options: "
   echo "  -m <maintainer>	add maintainer information to each PKGBUILD before building"
@@ -677,6 +660,20 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 
 # main()
 debug "main('$@')"
+# test for important programs that may not be installed 
+for bin in ${programs[@]}; do
+  debug "checking for $bin..."
+  if test -x "$(which $bin 2>/dev/null)"; then
+    debug " found"
+    continue
+  else
+    debug " not found"
+    err "Sorry, you need '$bin' to use this script."
+    err "Try running 'sudo pacman -Sy abs base-devel ccr packer'"
+    exit 1
+  fi
+done
+
 if [ -z "$1" -o "$1" == "--help" ]; then  # if no arguments were supplied, print usage info
   usage
 fi

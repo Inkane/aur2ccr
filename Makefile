@@ -19,6 +19,10 @@ install-man: # 'make install' calls this, so only do 'make install-man' if all y
 	install -d -m755 "$(DESTDIR)/usr/local/man/man8"
 	install -D -m644 $(manpages) "$(DESTDIR)/usr/local/man/man8/"
 
-
 aur2ccr.8.gz : $(others)
 	gzip -c aur2ccr.8 > aur2ccr.8.gz
+
+bundle: aur2ccr.txz.sh # This is for the distributer ONLY, you need my 'bundle>=0.9.1' to use it.
+
+aur2ccr.txz.sh : $(allfiles)
+	bundle -s -x * > aur2ccr.txz.sh
