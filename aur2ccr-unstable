@@ -224,7 +224,8 @@ depends() {  # get the dependencies from the PKGBUILD - may not work with multi-
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
   debug "addmaintainer('$@')"
-  sed -in 's/^# Maintainer: /# Contributer: /' PKGBUILD
+  sed -i.oldmaint 's/^# Maintainer: /# Contributer: /' PKGBUILD
+  sed -i 's/^# $Id:.*$//' PKGBUILD
   if !(printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD); then
     return 1
   fi
