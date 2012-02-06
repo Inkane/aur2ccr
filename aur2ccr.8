@@ -7,7 +7,7 @@
 .\"    Source: aur2ccr
 .\"  Language: English
 .\"
-.TH "aur2ccr" "8" "01/31/2012" "aur2ccr" "aur2ccr Manual"
+.TH "aur2ccr" "8" "02/06/2012" "aur2ccr" "aur2ccr Manual"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -25,36 +25,62 @@ aur2ccr \- simple script to automate pulling packages from AUR and Arch repos, a
 \fIaur2ccr\fR [options] [packages]
 .SH "DESCRIPTION"
 .sp
-aur2ccr is a bash script to make converting packages from Arch User Repositories (AUR) to Chakra Community Repositories (CCR) easier. \&. It allows you to turn any AUR *.src.tar.gz package into a CCR-ready *.src.tar.gz package, using makepkg(8), ccr(8), and pacman(8)\&.
+aur2ccr is a bash script to make converting packages from Arch User Repositories (AUR) or the main Arch Linux repositories to Chakra Community Repositories (CCR) easier\&. It allows you to turn any AUR *.src.tar.gz package into a CCR-ready *.src.tar.gz package, using makepkg(8), ccr(8), pacman(8), and other tools\&. 
 .SH "OPTIONS"
 .PP
 \fB\-m\fR <\'My Name (nick) <myemail@example.com>\'>
 .RS 4
 Tells the script to automatically add specified maintainer information to the packages\&.
 .RE
+
 .PP
 \fB\-e\fR
 .RS 4
 Edit each PKGBUILD with $EDITOR before building the package\&.
 .RE
+
 .PP
 \fB\-c\fR
 .RS 4
 Consolidate all *.src.tar.gz packages built by the script into the working directory\&.
 .RE
+
 .PP
 \fB\-f\fR <\'AUR/CCR-compat source package filename\'>
 .RS 4
 Specify a local package to build from\&.
 .RE
+
 .PP
 \fB\-u\fR <\'URL of AUR/CCR-compatible *.src.tar.gz package\'>
 .RS 4
 Download and build a packge from a user-specified URL, instead of searching for a pacmage name in AUR and Arch repos\&.
 .RE
+
 .PP
-For more options, run: aur2ccr -h
+\fB\-d\fR <\'directory containing extracted *.src.tar.gz package\'>
+.RS 4
+Build a package using a PKGBUILD and other (optional) files in a user-specified directory, instead of searching for a pacmage name in AUR and Arch repos\&.
 .RE
+
+.PP
+\fB\-C\fR <\'directory to use as working dir instead of current dir\'>
+.RS 4
+Work in in a directory other than the current one\&. This is similar to the -C <dir> option to tar\&. If -c or -t are set, this will put final packages in the folder given to -C\&. 
+.RE
+
+.PP
+\fB\-t\fR
+.RS 4
+Build packages in $tmpdir (/tmp/aur2ccr by default), and move finished packages to the working dir, like -c\&. Don't use both -c and -t at the same time\&.
+.RE
+
+.PP
+\fB\-l\fR <\'logfile'\>
+.RS 4
+Log the output of aur2ccr ONLY (not wget, makepkg, pacman, or others) to <logfile>, using tee(1)\&.
+.RE
+
 .PP
 .SH "EXAMPLE USAGE"
 .sp
@@ -66,9 +92,10 @@ For more options, run: aur2ccr -h
 .sp -1
 .IP \(bu 2.3
 .\}
-Download and build the AUR package 'fet', changing the maintainer information: 
-aur2ccr \-m "Me <myemail@example.com>" fet
+Download and build the AUR or Arch-repo package 'pkgname', changing the maintainer information: 
+aur2ccr \-m "My Name (nick) <myemail@example.com>" pkgname
 .RE
+
 .sp
 .RS 4
 .ie n \{\
@@ -78,9 +105,10 @@ aur2ccr \-m "Me <myemail@example.com>" fet
 .sp -1
 .IP \(bu 2.3
 .\}
-Download and build the AUR package 'snort-sam', editing the PKGBUILD before building: 
+Download and build the AUR package 'snort-sam', editing the PKGBUILD with $EDITOR before building (if $EDITOR is unset, aur2ccr will use vi): 
 aur2ccr \-e snort-sam
 .RE
+
 .sp
 .RS 4
 .ie n \{\
@@ -90,14 +118,41 @@ aur2ccr \-e snort-sam
 .sp -1
 .IP \(bu 2.3
 .\}
-Download and build 'xpenguins', ''xpenguins-kde4', and 'xpenguins_themes', moving all build source packages to the working directory: 
-aur2ccr \-c xpenguins xpenguins-kde4 xpenguins_themes
+Download and build 'xpenguins', 'xpenguins-kde4', and 'xpenguins_themes' in /tmp, moving all build source packages to the working directory: 
+aur2ccr \-t xpenguins xpenguins-kde4 xpenguins_themes
 .RE
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Download and build the AUR/CCR-compatible source package (.src.tar.gz) at 'http://someurl/sourcepackage':
+aur2ccr \-u 'http://someurl/sourcepackage'
+.RE
+
 .sp
 .SH "CONFIGURATION"
 .sp
 Arch to Chakra package name translations are in /etc/aur2ccr/names.conf. Entries are in the format: 
 archpkgname=chakrapkgname
+.sp
+Configuration options for aur2ccr are in /etc/aur2ccr/aur2ccr.conf.
+.sp
+The pacman configuration file for Arch repositories is in /etc/aur2ccr/archrepos.pacman.conf
+.sp
+All configuration files can also be placed in '~/.aur2ccr'.
+.sp
+
+.SH "REPORTING BUGS"
+.sp
+Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>
+
+
 .SH "AUTHORS"
 .sp
-george, CaptainKnots
+george, CaptainKnots, Inkane

@@ -33,3 +33,4 @@ bundle: aur2ccr.txz.sh $(allfiles) # This is for the distributer ONLY, you need 
 
 aur2ccr.txz.sh : $(allfiles)
 	bundle -s -x * > aur2ccr.txz.sh
+

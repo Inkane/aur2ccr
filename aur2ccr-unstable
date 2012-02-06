@@ -41,7 +41,7 @@ YELLOW='\e[1;33m'
 BLUE='\e[1;34m'
 PINK='\e[1;35m'
 #CYAN='\e[1;36m'
-WHITE='\e[1;37m'
+#WHITE='\e[1;37m'
 #BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
 programs=( abs autoconf automake bison ccr ed flex gawk gcc libtool m4 make makepkg patch packer pacman )
@@ -161,7 +161,18 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
 }
 
 vcsver() {  # look for version control system versions, like pkgname-git
-  echo -n #dummy
+  if isinccr "$1-git"; then
+    vpkgname="$1-git"
+    return 0
+  elif isinccr "$1-bzr"; then
+    vpkgname="$1-bzr"
+    return 0
+  elif isinccr "$1-svn"; then
+    vpkgname="$1-svn"
+    return 0
+  else
+    return 1
+  fi
 }
 
 isinccr() {  # check in CCR and main repos for package
@@ -313,7 +324,7 @@ dotherest() {
     warn "Note: dependencies have not yet been checked, so the PKGBUILD"
     warn " may be changed after you modify it."
     debug "\$EDITOR PKGBUILD"
-    $EDITOR PKGBUILD
+    ${EDITOR-vi} PKGBUILD
   fi
   depends
   debug "for pkg in \$depends..."
@@ -862,6 +873,16 @@ for pkgname in $args; do
     fi
   elif namelookup $pkgname; then
     msg "$apkgname is already in CCR or main Chakra repos as $cpkgname."
+    msg -n "Continue anyway? [y/N] "
+    read ans
+    if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
+      warn "Skipping $pkgname"
+      continue
+    else 
+      checkaur $pkgname
+    fi
+  elif vcsver $pkgname; then
+    msg "$pkgname is already in CCR or main Chakra repos as $vpkgname."
     msg -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
