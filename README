@@ -9,6 +9,7 @@ Todo:	remove redundant code, steal code from 'ccr';
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 
+
 Installation:
 Before installing this package, please be sure you are using Chakra Linux.
 This script was designed specifically for Chakra, and will not work on any 
