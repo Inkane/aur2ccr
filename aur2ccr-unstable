@@ -5,7 +5,7 @@
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
 # -- CREDITS --
 # This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
-# Portions of this script may have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
+# Portions of this script have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
 # Thanks to: 
 #  CaptainKnots for the github repo and the original idea behind aur2ccr;
 #  Inkane for submitting bug reports, feature requests, and code;
@@ -44,7 +44,7 @@ PINK='\e[1;35m'
 #WHITE='\e[1;37m'
 #BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
-programs=( abs autoconf automake bison ccr ed flex gawk gcc libtool m4 make makepkg patch packer pacman )
+programs=( abs autoconf automake bison ccr curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
 
 
 # output formatting functions
@@ -127,7 +127,7 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
   else
     err "An error occurred while checking Arch repos."
     debug "exiting..."
-    exit 1 # you can't call this in an if, (like if initarchr) because the vars will be unset
+    exit 1
   fi
 }
 
@@ -138,7 +138,7 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
   fi
   local num=0
   local ret=0
-  IFS="$newline"
+  IFS=$'\n'
   debug "entering 'for' loop..."
   for line in $afullist; do
     debug -n ". "
@@ -160,7 +160,17 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
   fi
 }
 
+isoutofdate() {  # stolen from the isoutofdate() and rpcinfo() functions in 'ccr'
+  debug "isoutofdate('$@')"
+  RPCURL="https://aur.archlinux.org/rpc.php?type"
+  if ! [[ -f "$tmpdir/$1.info" ]]; then
+    curl -LfGs --data-urlencode "arg=$1" "$RPCURL=info" > "$tmpdir/$1.info"
+  fi
+  [[ "$(jshon -Q -e results -e OutOfDate -u < "$tmpdir/$1.info")" = "1" ]]
+}
+
 vcsver() {  # look for version control system versions, like pkgname-git
+  debug "vcsver('$@')"
   if isinccr "$1-git"; then
     vpkgname="$1-git"
     return 0
@@ -184,13 +194,9 @@ isinccr() {  # check in CCR and main repos for package
   fi
 }
 
-isinrepos() {  # check in main Chakra repos for package
+isinrepos() {  # check in main Chakra repos for package - stolen from 'ccr'
   debug "isinrepos('$@')"
-  if (pacman -Ssq $1 | grep -q "^$1$"); then 
-    return 0
-  else
-    return 1
-  fi
+  pacman -Si -- "$1" &>/dev/null
 }
 
 isinaur() {
@@ -230,20 +236,11 @@ getarchname() {
   fi
 }
 
-depends() {  # get the dependencies from the PKGBUILD - may not work with multi-line depends
-  debug "depends('$@')"
-  depends=$(grep '^depends=' PKGBUILD | sed "s/depends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")
-  depends="$depends $(grep '^makedepends=' PKGBUILD | sed "s/makedepends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")"
-  depends="$(echo "$depends" | sed "s/makedepends=(['\"]*)//")"
-  depends="$(echo "$depends" | sed "s/makedepends=(\([^'\"]*\))/\1/")"
-  depends="$(echo "$depends" | sed "s/depends=(['\"]*)//")"
-  depends="$(echo "$depends" | sed "s/depends=(\([^'\"]*\))/\1/")"
-  depends="$(echo "$depends" | sed "s/.*(\(.*\)/\1/")" # PLEASE, just quote your depends! It's not that hard! 
-  depends="$(echo "$depends" | sed "s/\(.*\))/\1/")"   # depends=('every' 'single' 'dependency')
-  odepends=$depends; depends=
-  for depend in $odepends; do # get rid of packagename>=V.E.R stuff
-    depends="$depends $(echo $depend | sed 's/\(.*\)>.*/\1/')"
-  done
+depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
+  debug "depends($@)"
+  . PKGBUILD
+  IFS=$'\n'
+  depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) )
 }
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
@@ -267,7 +264,12 @@ EOF
 
 uchksums() {  # update checksums with 'makepkg -gf'
   debug "uchksums($@)"
-  sums="$(makepkg -gf)"
+  if !(makepkg -gf > "$tmpdir/${PID}${UID}.sums"); then
+    err "'makepkg -g' failed in '$(pwd)'!"
+    exit 1
+  else
+    sums="$(cat "$tmpdir/${PID}${UID}.sums")"
+  fi
   stype="$(echo $sums | grep -o "^..*sums=")"
   if (echo "$sums" | grep -q "^$stype"); then
     if (grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD); then # if all on one line
@@ -327,8 +329,8 @@ dotherest() {
     ${EDITOR-vi} PKGBUILD
   fi
   depends
-  debug "for pkg in \$depends..."
-  for pkg in $depends; do 
+  debug "for pkg in ${depends[@]}..."
+  for pkg in ${depends[@]}; do 
     if isinccr $pkg; then 
       msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
       if !(isinrepos $pkg); then
@@ -632,7 +634,7 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
 namechange() {
   debug "namechange('$@')"
   depends
-  for pkg in $depends; do 
+  for pkg in ${depends[@]}; do 
     if namelookup $pkg; then
       namelookup $pkg
       if (sed -i "s/\(^[^ ]*depends=.*[(\s'\"]*\)${apkgname}\([\s'\")]*\)/\1${cpkgname}\2/g" PKGBUILD); then
@@ -672,6 +674,17 @@ checkaur() {
   debug "checkaur('$@')"
   if isinaur $1; then 
     msg "'$1' found in AUR..."
+    if isoutofdate $1; then
+      warn "$1 is marked as out of date in AUR!"
+      warn -n "Are you sure you want to continue? [y/N] "
+      read ans
+      if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then
+        warn "Skipping $1"
+        return 0
+      else
+        warn "Continuing. This is a bad idea!"; sleep 3
+      fi
+    fi
     if !(makeccrpkg $1); then
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $1"
@@ -809,7 +822,7 @@ for bin in ${programs[@]}; do
   else
     debug " not found"
     err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr gawk packer sed'"
+    err "Try running 'sudo pacman -Sy abs base-devel ccr curl gawk jshon packer sed'"
     exit 1
   fi
 done
