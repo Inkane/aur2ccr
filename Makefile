@@ -3,7 +3,7 @@ manpages = aur2ccr.8.gz
 binfiles = aur2ccr
 unstable = aur2ccr-unstable
 configs = names.conf
-others = aur2ccr.8 Makefile
+others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
