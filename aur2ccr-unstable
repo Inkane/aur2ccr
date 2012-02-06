@@ -5,7 +5,7 @@
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
 # -- CREDITS --
 # This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
-# Portions of this script may have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
+# Portions of this script have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
 # Thanks to: 
 #  CaptainKnots for the github repo and the original idea behind aur2ccr;
 #  Inkane for submitting bug reports, feature requests, and code;
@@ -127,7 +127,7 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
   else
     err "An error occurred while checking Arch repos."
     debug "exiting..."
-    exit 1 # you can't call this in an if, (like if initarchr) because the vars will be unset
+    exit 1
   fi
 }
 
@@ -160,7 +160,7 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
   fi
 }
 
-isoutofdate() {  # stolen from 'ccr'
+isoutofdate() {  # stolen from the isoutofdate() and rpcinfo() functions in 'ccr'
   debug "isoutofdate('$@')"
   RPCURL="https://aur.archlinux.org/rpc.php?type"
   if ! [[ -f "$tmpdir/$1.info" ]]; then
@@ -237,7 +237,7 @@ getarchname() {
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
-  debug "depends('$@')"
+  debug "depends($@)"
   . PKGBUILD
   IFS=$'\n'
   depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) )
