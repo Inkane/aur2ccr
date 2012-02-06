@@ -7,7 +7,6 @@ Todo:	remove redundant code, steal code from 'ccr';
 	add ability to check if ${pkgname}-git exists in CCR/Chakra repos;
 	add basic (grep-style) regex support for searching package names;
 	improve/update the man page, aur2ccr(8);
-	use local configuration (~/.aur2ccr) as well as global (/etc/aur2ccr);
 	improve the function for grabbing package info from Arch repos; 
 	speed up the pacman-output-grepping function (with perl?);
 	add the ability to automatically upload packages to CCR (if possible);
