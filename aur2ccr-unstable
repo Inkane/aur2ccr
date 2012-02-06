@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.5.6
+# aur2ccr - version 0.5.8
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -12,21 +12,22 @@
 #  abveritas for adding to the arch/chakra package name translations list;
 #  tetris4 and [jmc] for their support and help developing the script;
 #  the developers of ccr, packer, abs, and the other tools this script uses;
-#  all the Chakra devs, for making such an awesome distro;
+#  the Chakra devs, for making such an awesome distro;
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.5.6"
+pver="0.5.8"
 confdir="/etc/aur2ccr"
-lconfdir="~/.aur2ccr"
-tmpdir="/tmp"
+lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
+tmpdir="/tmp/aur2ccr"
 namesconf="names.conf"
 apconf="archrepos.pacman.conf"
 acconf="aur2ccr.conf"
 
 # initialize variables
 startdir="$(pwd)"
+findir="$(pwd)"
 badpkgs=0
 consolidate=0
 edit=0
@@ -34,15 +35,16 @@ addad=0
 archrinit=0
 newline='
 '
-BLACK='\e[1;39m'
-GREEN='\e[1;32m'
-PINK='\e[1;35m'
-CYAN='\e[1;36m'
-BLUE='\e[1;34m'
-YELLOW='\e[1;33m'
 RED='\e[1;31m'
+#GREEN='\e[1;32m'
+YELLOW='\e[1;33m'
+BLUE='\e[1;34m'
+PINK='\e[1;35m'
+#CYAN='\e[1;36m'
+#WHITE='\e[1;37m'
+#BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
-programs=( abs autoconf automake bison ccr ed flex gcc libtool m4 make makepkg patch packer )
+programs=( abs autoconf automake bison ccr ed flex gawk gcc libtool m4 make makepkg patch packer pacman )
 
 
 # output formatting functions
@@ -52,7 +54,11 @@ debug() { # echo things when called like 'debug doing stuff...' only when debug=
       local eopts="$1"
       shift
     fi
-    echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
+    if [ -n "$logfile" ]; then
+      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@" | tee -a "$logfile"
+    else
+      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
+    fi
   else
     return 0
   fi
@@ -64,7 +70,11 @@ msg() { # make aur2ccr's normal output prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@"
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" 
+  fi
 }
 
 warn() { # make aur2ccr's warning messages prettier and more unified.
@@ -73,7 +83,11 @@ warn() { # make aur2ccr's warning messages prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
+  fi
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
@@ -82,7 +96,11 @@ err() { # make aur2ccr's error messages prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
+  fi
 }
 
 clean() {  # clean up temp files
@@ -90,8 +108,6 @@ clean() {  # clean up temp files
   if [ -z "$1" ]; then
     debug "cleaning..."
     warn "Keyboard interrupt caught, cleaning up..."
-    debug "rm'ing pacman conf"
-    rm -f pacman.conf.tmp
     debug "exiting..."
     exit 1
   else
@@ -102,19 +118,14 @@ clean() {  # clean up temp files
 
 initarchr() {	# set up the arch repo vars, so we only need to sudo once
   debug "initarchr('$@')"
-  printf '[community]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[core]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[extra]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[multilib]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n' > pacman.conf.tmp
-  if (sudo pacman -Sy --config pacman.conf.tmp); then
-    areplist=$(pacman --config pacman.conf.tmp -Ssq)
-    afullist=$(pacman --config pacman.conf.tmp -Ss)
+  if (sudo pacman -Sy --config "$paconf"); then
+    areplist=$(pacman --config "$paconf" -Ssq)
+    afullist=$(pacman --config "$paconf" -Ss)
     archrinit=1
     debug "sudo pacman -Sy ..."
     sudo pacman -Sy >&2> /dev/null
-    debug "rm pacman conf"
-    rm pacman.conf.tmp
   else
     err "An error occurred while checking Arch repos."
-    debug "rm pacman conf"
-    rm pacman.conf.tmp
     debug "exiting..."
     exit 1 # you can't call this in an if, (like if initarchr) because the vars will be unset
   fi
@@ -143,8 +154,24 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
       fi
     fi
   done
+  IFS=" "
   if [ "$ret" == 0 ]; then
     echo " (nothing found)"
+  fi
+}
+
+vcsver() {  # look for version control system versions, like pkgname-git
+  if isinccr "$1-git"; then
+    vpkgname="$1-git"
+    return 0
+  elif isinccr "$1-bzr"; then
+    vpkgname="$1-bzr"
+    return 0
+  elif isinccr "$1-svn"; then
+    vpkgname="$1-svn"
+    return 0
+  else
+    return 1
   fi
 }
 
@@ -179,7 +206,6 @@ isinaur() {
   fi
 }
 
-
 isinarchr() {
   debug "isinarchr('$@')"
   msg "Checking Arch repos..."
@@ -204,7 +230,7 @@ getarchname() {
   fi
 }
 
-depends() {
+depends() {  # get the dependencies from the PKGBUILD - may not work with multi-line depends
   debug "depends('$@')"
   depends=$(grep '^depends=' PKGBUILD | sed "s/depends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")
   depends="$depends $(grep '^makedepends=' PKGBUILD | sed "s/makedepends=(['\"]\(.*\)['\"])/\1/; s/['\"]//g")"
@@ -220,28 +246,53 @@ depends() {
   done
 }
 
-addmaintainer() { # this is wrong, I need to beef up the function a little.
+addmaintainer() {  # change maintainer info in the PKGBUILD
   debug "addmaintainer('$@')"
-#  if  
-#    
-#  fi
-  ed -s PKGBUILD << EOF | sed 's/#\sContributer/ Previous Maintainer/'
-1s/Maintainer/Contributer
-1i
-# Maintainer: $1
-.
-wq
-EOF
+  sed -i.oldmaint 's/^# Maintainer: /# Contributer: /' PKGBUILD
+  sed -i 's/^# $Id:.*$//' PKGBUILD
+  if !(printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD); then
+    return 1
+  fi
 }
 
 addad() {
   debug "addad('$@')"
   ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporing aur2ccr! :)"
 2i
-# Contributer: aur2ccr (http://chakra.sourceforge.net/ccr/packages.php?K=aur2ccr)
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
 .
 wq
 EOF
+}
+
+uchksums() {  # update checksums with 'makepkg -gf'
+  debug "uchksums($@)"
+  sums="$(makepkg -gf)"
+  stype="$(echo $sums | grep -o "^..*sums=")"
+  if (echo "$sums" | grep -q "^$stype"); then
+    if (grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD); then # if all on one line
+      if (sed -i "s/^$stype.*/$sums/" PKGBUILD); then
+        return 0
+      else
+        err "sed failed while updating checksums"
+        return 1
+      fi
+    elif (grep -q "^$stype" PKGBUILD); then
+      stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
+      debug "awking..."
+      local new="$(awk -v "newsums=$sums" -v "stype=$stype" '$1 ~ stype { t = 1; } t == 1 { if ($0 ~ "\)") { t = 0; print(newsums); next; } next; } { print; }' PKGBUILD 2>/dev/null)" # sheesh. awk courtesy of pr3d4t0r, I haven't a clue how it works.
+      debug "sending awk output to PKGBUILD..."
+      echo "$new" > PKGBUILD
+      return 0
+    elif [ -z "$sums" ]; then
+      return 0
+    else
+      return 1
+    fi
+  else
+    err "something went wrong while updating checksums"
+    return 1
+  fi
 }
 
 dotherest() {
@@ -261,13 +312,19 @@ dotherest() {
   if [ "$addad" == 1 ]; then
     addad
   fi
+  debug "if uchksums..."
+  if uchksums; then
+    msg "checksums for $pkgname updated"
+  else
+    warn "checksums for $pkgname could not be updated!"
+  fi
   debug "if \$edit, then edit..."
   if [ "$edit" -eq 1 ]; then
     msg "Opening '$pkgname' PKGBUILD with $EDITOR"
     warn "Note: dependencies have not yet been checked, so the PKGBUILD"
     warn " may be changed after you modify it."
     debug "\$EDITOR PKGBUILD"
-    $EDITOR PKGBUILD
+    ${EDITOR-vi} PKGBUILD
   fi
   depends
   debug "for pkg in \$depends..."
@@ -342,17 +399,16 @@ dotherest() {
       return 1
     fi
   else
-    warn "Package '$pkgname' has dependencies outside of CCR or Chakra repos."
+    warn "Package '$pkgname' has dependencies outside of the Chakra repos."
     warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
     warn "Please test the final .src.tar.gz package manually with ccr."
   fi
-  makepkg -gf
   if (makepkg --source -f); then
     msg "Package '$pkgname' built successfully."
     if [ "$consolidate" -eq 1 ]; then
       pkgpkg="$(ls $pkgname*.src.tar.gz)"
-      mv $pkgpkg "$startdir"
-      msg "$pkgpkg moved to $startdir"
+      mv $pkgpkg "$findir"
+      msg "$pkgpkg moved to $findir"
     fi
   else
     err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
@@ -471,9 +527,12 @@ makeccrpkg_u() {
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
+
   if dotherest "$pkgname"; then
     return 0
   else
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
 }
@@ -509,10 +568,51 @@ makeccrpkg_f() {
   if dotherest "$pkgname"; then
     return 0
   else
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
 }
 
+makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to -d)
+  debug "makeccrpkg_d('$@')"
+  cd "$startdir"
+  local pkgname="$(basename "$pkgdir")"
+  if test -d "$pkgdir"; then
+    cd "$pkgdir"
+  else
+    err "$pkgdir is not a directory or does not exist"
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
+    return 1
+  fi; if ! test -r "PKGBUILD"; then
+    err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
+    return 1
+  fi
+  cd "$startdir"
+  if !(mkdir -p "$pkgname"); then
+    err "cannot create directory '$startdir/$pkgname'"
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
+    return 1
+  fi; if !(cp -r "$pkgdir" "$pkgname/"); then
+    err "cannot copy files from '$pkgdir'"
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
+    return 1
+  fi
+  cd "$pkgname/$pkgname"
+
+  if dotherest "$pkgname"; then
+    return 0
+  else
+    let badpkgs=$badpkgs+1
+    failedpkgs="$failedpkgs $pkgname"
+    return 1
+  fi
+}
 
 namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   debug "namelookup('$@')"
@@ -598,12 +698,19 @@ usage() {
   echo "                	<maintainer> should be in the form 'My Name (nick) <me@example.com>'"
   echo "  -e			edit the PKGBUILD for each package with \$EDITOR before building"
   echo "  -a			add an aur2ccr advertisement - add as Contributer: "
-  echo "        		'aur2ccr (http://chakra.sourceforge.net/ccr/packages.php?K=aur2ccr)'"
+  echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -c			move all CCR source packages into the working directory"
   echo "  -f <file>		create a CCR source package from source package <file>"
   echo "  -u <URL>		... or from an AUR/CCR-compatible source package at <URL>"
+  echo "  -d <dir>		... or from a PKGBUILD and (optional) other files in <dir>"
+  echo "  -C <newdir>		use <newdir> as the working directory instead of the current dir"
+  echo "  -t			use '$tmpdir' as the build directory instead of the current dir"
+  echo "   			(all finished src packages will be moved into the working dir, like -c)"
+  echo "  -l <logfile>		use 'tee' to send all aur2ccr messages to <logfile>"
   echo "  -h			display this help and exit"
   echo "  -v			print version information and exit"
+  echo 
+  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]"
   echo 
   echo "Note: Options must be specified separately, like '-c -e', not '-ce'."
   echo "This will (hopefully) be fixed in a future version."
@@ -625,6 +732,27 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       url="$arg"
       isurl=0
       continue
+    elif [ -n "$isdir" -a "$isdir" == 1 ]; then 
+      pkgdir="$arg"
+      isdir=0
+      continue
+    elif [ -n "$iscdir" -a "$iscdir" == 1 ]; then 
+      startdir="$arg"
+      findir="$arg"
+      iscdir=0
+      continue
+    elif [ -n "$islfile" -a "$islfile" == 1 ]; then 
+      logfile="$arg"
+      touch "$logfile" >&2> /dev/null
+      if ! test -w "$logfile"; then
+        err "specified log file '$logfile' is not writable"
+        exit 1
+      fi
+      echo >> "$logfile"
+      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+      echo >> "$logfile"
+      islfile=0
+      continue
     elif [ -n "$ismaint" -a "$ismaint" == 1 ]; then
       maintainer="$arg"
       ismaint=0
@@ -640,6 +768,15 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       isfile=1
     elif [ -n "$arg" -a "$arg" == "-u" ]; then
       isurl=1
+    elif [ -n "$arg" -a "$arg" == "-d" ]; then
+      isdir=1
+    elif [ -n "$arg" -a "$arg" == "-C" ]; then
+      iscdir=1
+    elif [ -n "$arg" -a "$arg" == "-t" ]; then
+      usetdir=1
+      consolidate=1
+    elif [ -n "$arg" -a "$arg" == "-l" ]; then
+      islfile=1
     elif [ -n "$arg" -a "$arg" == "-h" ]; then
       usage
     elif [ -n "$arg" -a "$arg" == "-v" ]; then
@@ -651,7 +788,10 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       args="$args $arg"
     fi
   done
-  if [ -z "$args" -a -z "$url" -a -z "$file" ]; then 
+  if [ -n "$usetdir" -a "$usetdir" == 1 ]; then
+    startdir="$tmpdir"
+  fi
+  if [ -z "$args" -a -z "$url" -a -z "$file" -a -z "$pkgdir" ]; then 
     err "You did not specify any packages to build"
     err "There is nothing to do. Exiting..."
     exit 1
@@ -669,10 +809,45 @@ for bin in ${programs[@]}; do
   else
     debug " not found"
     err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr packer'"
+    err "Try running 'sudo pacman -Sy abs base-devel ccr gawk packer sed'"
     exit 1
   fi
 done
+
+# load setting from config files, prefer local over global
+if test -r "$confdir/$acconf"; then
+  debug "found global conf, using"
+  . "$confdir/$acconf"
+fi; if test -r "$lconfdir/$acconf"; then
+  debug "found local conf, using"
+  . "$lconfdir/$acconf"
+fi # if none exist, just use default values
+# make the temp dir, if it does not already exist
+mkdir -p "$tmpdir"
+# find other config files, and set variables to point to them- prefer global over local
+if test -r "$confdir/$apconf"; then
+  debug "found global pacman conf, using"
+  paconf="$confdir/$apconf"
+elif test -r "$lconfdir/$apconf"; then
+  debug "found local pacman conf, using"
+  paconf="$lconfdir/$apconf"
+else 
+  debug "could not find local or global pacman conf, using $tmpdir/pacman.conf.tmp instead"
+  printf '[community]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[core]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[extra]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\n[multilib]\nServer = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n' > "$tmpdir/pacman.conf.tmp"
+  paconf="$tmpdir/pacman.conf.tmp"
+fi; if test -r "$confdir/$namesconf"; then
+  debug "found global names.conf, using"
+  namesconf="$confdir/$namesconf"
+elif test -r "$lconfdir/$namesconf"; then
+  debug "found local names.conf, using"
+  namesconf="$lconfdir/$namesconf"
+fi
+# fix empty/unset variables to prevent errors
+pname="${pname-aur2ccr}" pver="${pver-0.5.7}" confdir="${confdir-/etc/aur2ccr}"
+lconfdir="${lconfdir-~/.aur2ccr}" tmpdir="${tmpdir-/tmp}" namesconf="${namesconf-names.conf}"
+apconf="${apconf-archrepos.pacman.conf}" acconf="${acconf-aur2ccr.conf}" 
+startdir="${startdir-$(pwd)}" findir="${findir-$(pwd)}" consolidate="${consolidate-0}"
+edit="${edit-0}" addad="${addad-0}" 
 
 if [ -z "$1" -o "$1" == "--help" ]; then  # if no arguments were supplied, print usage info
   usage
@@ -706,6 +881,16 @@ for pkgname in $args; do
     else 
       checkaur $pkgname
     fi
+  elif vcsver $pkgname; then
+    msg "$pkgname is already in CCR or main Chakra repos as $vpkgname."
+    msg -n "Continue anyway? [y/N] "
+    read ans
+    if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
+      warn "Skipping $pkgname"
+      continue
+    else 
+      checkaur $pkgname
+    fi
   else
     checkaur $pkgname
   fi
@@ -714,6 +899,8 @@ if [ -n "$url" ]; then
   makeccrpkg_u
 fi; if [ -n "$file" ]; then
   makeccrpkg_f
+fi; if [ -n "$pkgdir" ]; then
+  makeccrpkg_d
 fi
 
 if [ "$badpkgs" -gt 0 ]; then
@@ -723,6 +910,9 @@ if [ "$badpkgs" -gt 0 ]; then
 else
   msg "$badpkgs package(s) failed"
   debug "0 pkgs failed, exiting..."
+  warn "Remember, just because aur2ccr seems to have succeeded, does not mean the package(s)"
+  warn "will work. Please thoroughly test all packages BEFORE uploading them to CCR."
+  warn "Broken packages may be removed without warning."
   exit 0
 fi; if [ -n "$failedpkgs" ]; then 
   err "The bad package(s) are:"

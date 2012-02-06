@@ -2,8 +2,8 @@
 manpages = aur2ccr.8.gz
 binfiles = aur2ccr
 unstable = aur2ccr-unstable
-configs = names.conf
-others = aur2ccr.8 Makefile
+configs = names.conf aur2ccr.conf archrepos.pacman.conf
+others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
@@ -29,7 +29,8 @@ install-man: # 'make install' calls this, so only do 'make install-man' if all y
 aur2ccr.8.gz : $(others)
 	gzip -c aur2ccr.8 > aur2ccr.8.gz
 
-bundle: aur2ccr.txz.sh # This is for the distributer ONLY, you need my 'bundle>=0.9' to use it.
+bundle: aur2ccr.txz.sh $(allfiles) # This is for the distributer ONLY, you need my 'bundle>=0.9' to use it.
 
 aur2ccr.txz.sh : $(allfiles)
 	bundle -s -x * > aur2ccr.txz.sh
+

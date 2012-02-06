@@ -3,19 +3,28 @@ aur2ccr -
 	packages that are ready for uploading to CCR.
 
 Todo:	remove redundant code, steal code from 'ccr';
-	improve the addmaintainer function;
-	have 'makepkg -g' insert correct md5sums into the PKGBUILDs;
 	improve popopts function, to allow options to be used like '-ce';
-	add ability to check if ${pkgname}-git exists in CCR/Chakra repos;
-	add basic (grep-style) regex support for searching package names;
 	improve the function for grabbing package info from Arch repos; 
-	add the ability to automatically upload packages to CCR (if possible);
-	improve interface/output format, add colors;
-	improve/update the man page, aur2ccr(8);
-	add -d option to create packages from a folder containing a PKGBUILD;
-	use local configuration (~/.aur2ccr) as well as global (/etc/aur2ccr);
-	add option to use $tmpdir, and only put final packages in working dir;
-	add -C <newdir> option to change working dir to any other dir;
 	speed up the pacman-output-grepping function (with perl?);
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
+
+
+Installation:
+Before installing this package, please be sure you are using Chakra Linux.
+This script was designed specifically for Chakra, and will not work on any 
+other platform, including Arch Linux.
+
+Installation for aur2ccr is simple. Just run:
+  make
+  sudo make install
+ -- OR --
+  ccr -S aur2ccr
+This will install the script itself, the needed configuration files, and
+the aur2ccr(8) man page. There is no need for a ./configure, as the script
+only works on one platform: Chakra Linux.
+
+In order to use the script, you may need to run: 
+  sudo pacman -Sy abs awk base-devel ccr packer sed
+This will install all the programs required by the script, as well as a 
+few tools that are needed to compile most packages. 
