@@ -54,7 +54,11 @@ debug() { # echo things when called like 'debug doing stuff...' only when debug=
       local eopts="$1"
       shift
     fi
-    echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
+    if [ -n "$logfile" ]; then
+      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@" | tee -a "$logfile"
+    else
+      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
+    fi
   else
     return 0
   fi
@@ -66,7 +70,11 @@ msg() { # make aur2ccr's normal output prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@"
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" 
+  fi
 }
 
 warn() { # make aur2ccr's warning messages prettier and more unified.
@@ -75,7 +83,11 @@ warn() { # make aur2ccr's warning messages prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
+  fi
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
@@ -84,7 +96,11 @@ err() { # make aur2ccr's error messages prettier and more unified.
     local eopts="$1"
     shift
   fi
-  echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
+  if [ -n "$logfile" ]; then
+    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" | tee -a "$logfile"
+  else
+    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
+  fi
 }
 
 clean() {  # clean up temp files
@@ -235,7 +251,7 @@ addad() {
   debug "addad('$@')"
   ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporing aur2ccr! :)"
 2i
-# Contributer: aur2ccr (http://chakra.sourceforge.net/ccr/packages.php?K=aur2ccr)
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
 .
 wq
 EOF
@@ -674,7 +690,7 @@ usage() {
   echo "                	<maintainer> should be in the form 'My Name (nick) <me@example.com>'"
   echo "  -e			edit the PKGBUILD for each package with \$EDITOR before building"
   echo "  -a			add an aur2ccr advertisement - add as Contributer: "
-  echo "        		'aur2ccr (http://chakra.sourceforge.net/ccr/packages.php?K=aur2ccr)'"
+  echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -c			move all CCR source packages into the working directory"
   echo "  -f <file>		create a CCR source package from source package <file>"
   echo "  -u <URL>		... or from an AUR/CCR-compatible source package at <URL>"
@@ -682,8 +698,11 @@ usage() {
   echo "  -C <newdir>		use <newdir> as the working directory instead of the current dir"
   echo "  -t			use '$tmpdir' as the build directory instead of the current dir"
   echo "   			(all finished src packages will be moved into the working dir, like -c)"
+  echo "  -l <logfile>		use 'tee' to send all aur2ccr messages to <logfile>"
   echo "  -h			display this help and exit"
   echo "  -v			print version information and exit"
+  echo 
+  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]"
   echo 
   echo "Note: Options must be specified separately, like '-c -e', not '-ce'."
   echo "This will (hopefully) be fixed in a future version."
@@ -714,6 +733,18 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       findir="$arg"
       iscdir=0
       continue
+    elif [ -n "$islfile" -a "$islfile" == 1 ]; then 
+      logfile="$arg"
+      touch "$logfile" >&2> /dev/null
+      if ! test -w "$logfile"; then
+        err "specified log file '$logfile' is not writable"
+        exit 1
+      fi
+      echo >> "$logfile"
+      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+      echo >> "$logfile"
+      islfile=0
+      continue
     elif [ -n "$ismaint" -a "$ismaint" == 1 ]; then
       maintainer="$arg"
       ismaint=0
@@ -736,6 +767,8 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
     elif [ -n "$arg" -a "$arg" == "-t" ]; then
       usetdir=1
       consolidate=1
+    elif [ -n "$arg" -a "$arg" == "-l" ]; then
+      islfile=1
     elif [ -n "$arg" -a "$arg" == "-h" ]; then
       usage
     elif [ -n "$arg" -a "$arg" == "-v" ]; then
