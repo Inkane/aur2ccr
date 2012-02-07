@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.5.8
+# aur2ccr - version 0.6
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -17,7 +17,7 @@
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.5.8"
+pver="0.6"
 confdir="/etc/aur2ccr"
 lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"
