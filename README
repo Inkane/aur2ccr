@@ -1,13 +1,16 @@
 aur2ccr - 
-	Pull information from AUR or Arch repos, and make source 
-	packages that are ready for uploading to CCR.
+Pull information from AUR or Arch repos, and make source 
+packages that are ready for uploading to CCR.
 
-Todo:	improve popopts function, to allow options to be used like '-ce';
-	major code cleanup, try to reduce at least a couple hundred lines;
-	add optipkg() function to fix some easy errors in PKGBUILDs;
-	improve function for grabbing package info from Arch repos (perl); 
-	speed up the pacman-output-grepping function (with perl?);
-	find and fix bugs!
+Todo: 
+improve popopts function, to allow options to be used like '-ce';
+major code cleanup, try to reduce by at least a couple hundred lines;
+add optipkg() function to fix some easy errors in PKGBUILDs;
+cannibalize packer and remove it as a dependency;
+get aur2ccr ready for an eventual switch to akabei;
+improve function for grabbing package info from Arch repos (perl); 
+speed up the pacman-output-grepping function (with perl?);
+find and fix bugs!
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 
