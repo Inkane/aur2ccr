@@ -3,6 +3,8 @@ aur2ccr -
 	packages that are ready for uploading to CCR.
 
 Todo:	improve popopts function, to allow options to be used like '-ce';
+	major code cleanup, try to reduce at least a couple hundred lines;
+	add optipkg() function to fix some easy errors in PKGBUILDs;
 	improve function for grabbing package info from Arch repos (perl); 
 	speed up the pacman-output-grepping function (with perl?);
 	find and fix bugs!
