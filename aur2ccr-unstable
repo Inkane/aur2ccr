@@ -856,11 +856,12 @@ elif test -r "$lconfdir/$namesconf"; then
   namesconf="$lconfdir/$namesconf"
 fi
 # fix empty/unset variables to prevent errors
-pname="${pname-aur2ccr}" pver="${pver-0.5.7}" confdir="${confdir-/etc/aur2ccr}"
-lconfdir="${lconfdir-~/.aur2ccr}" tmpdir="${tmpdir-/tmp}" namesconf="${namesconf-names.conf}"
+pname="${pname-aur2ccr}"                 pver="${pver-0.5.7}" 
+confdir="${confdir-/etc/aur2ccr}"        lconfdir="${lconfdir-~/.aur2ccr}" 
+tmpdir="${tmpdir-/tmp}"                  namesconf="${namesconf-names.conf}"
 apconf="${apconf-archrepos.pacman.conf}" acconf="${acconf-aur2ccr.conf}" 
-startdir="${startdir-$(pwd)}" findir="${findir-$(pwd)}" consolidate="${consolidate-0}"
-edit="${edit-0}" addad="${addad-0}" 
+startdir="${startdir-$(pwd)}"            findir="${findir-$(pwd)}" 
+consolidate="${consolidate-0}"           edit="${edit-0}" addad="${addad-0}" 
 
 if [ -z "$1" -o "$1" == "--help" ]; then  # if no arguments were supplied, print usage info
   usage
