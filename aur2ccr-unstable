@@ -1,5 +1,5 @@
 # #!/bin/bash
-# aur2ccr - version 0.6
+# aur2ccr - version 0.6.1
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -17,7 +17,7 @@
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.6"
+pver="0.6.1"
 confdir="/etc/aur2ccr"
 lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"
@@ -314,7 +314,7 @@ dotherest() {
           let depsnotinrep=$depsnotinrep+1
         fi
       else 
-        err "There seems to be a bad definition in $confdir/$namesconf. Please fix this."
+        err "There seems to be a bad definition in $namesconf. Please fix this."
         err "The offending line is: '$apkgname=$cpkgname'"
         let badpkgs=$badpkgs+1
         return 1
@@ -584,10 +584,10 @@ makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to
 
 namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   debug "namelookup('$@')"
-  if test -r "$confdir/$namesconf"; then
-    if (grep -q "$1=..*" "$confdir/$namesconf"); then
+  if test -r "$namesconf"; then
+    if (grep -q "$1=..*" "$namesconf"); then
       apkgname="$1"
-      cpkgname="$(grep "^$1=..*" "$confdir/$namesconf" | sed "s/$1=//")"
+      cpkgname="$(grep "^$1=..*" "$namesconf" | sed "s/$1=//")"
     else
       return 1
     fi
