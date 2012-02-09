@@ -44,7 +44,7 @@ PINK='\e[1;35m'
 #WHITE='\e[1;37m'
 #BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
-programs=( abs autoconf automake bison ccr curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
+programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
 
 
 # output formatting functions
@@ -822,7 +822,7 @@ for bin in ${programs[@]}; do
   else
     debug " not found"
     err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr curl gawk jshon packer sed'"
+    err "Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer sed'"
     exit 1
   fi
 done

@@ -44,7 +44,7 @@ PINK='\e[1;35m'
 #WHITE='\e[1;37m'
 #BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
-programs=( abs autoconf automake bison ccr curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
+programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
 
 
 # output formatting functions
@@ -59,8 +59,6 @@ debug() { # echo things when called like 'debug doing stuff...' only when debug=
     else
       echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
     fi
-  else
-    return 0
   fi
 }
 
@@ -105,15 +103,10 @@ err() { # make aur2ccr's error messages prettier and more unified.
 
 clean() {  # clean up temp files
   debug "clean('$@')"
-  if [ -z "$1" ]; then
-    debug "cleaning..."
-    warn "Keyboard interrupt caught, cleaning up..."
-    debug "exiting..."
-    exit 1
-  else
-    echo -n # this may be used later to clean up something else
-    debug "not currently used"
-  fi
+  debug "cleaning..."
+  warn "Keyboard interrupt caught, cleaning up..."
+  debug "exiting..."
+  exit 1
 }
 
 initarchr() {	# set up the arch repo vars, so we only need to sudo once
@@ -163,7 +156,7 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
 isoutofdate() {  # stolen from the isoutofdate() and rpcinfo() functions in 'ccr'
   debug "isoutofdate('$@')"
   RPCURL="https://aur.archlinux.org/rpc.php?type"
-  if ! [[ -f "$tmpdir/$1.info" ]]; then
+  if ! test -f "$tmpdir/$1.info"; then
     curl -LfGs --data-urlencode "arg=$1" "$RPCURL=info" > "$tmpdir/$1.info"
   fi
   [[ "$(jshon -Q -e results -e OutOfDate -u < "$tmpdir/$1.info")" = "1" ]]
@@ -187,11 +180,7 @@ vcsver() {  # look for version control system versions, like pkgname-git
 
 isinccr() {  # check in CCR and main repos for package
   debug "isinccr('$@')"
-  if (ccr -Ssq $1 | grep -q "^$1$"); then
-    return 0
-  else
-    return 1
-  fi
+  ccr -Ssq $1 | grep -q "^$1$"
 }
 
 isinrepos() {  # check in main Chakra repos for package - stolen from 'ccr'
@@ -205,25 +194,14 @@ isinaur() {
     err "Package names must be at least two characters in length"
     exit 1
   fi
-  if (wget -q --spider https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD); then
-    return 0
-  else 
-    return 1
-  fi
+  wget -q --spider "https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD"
 }
 
 isinarchr() {
   debug "isinarchr('$@')"
   msg "Checking Arch repos..."
-  if [ "$archrinit" == 0 ]; then
-    initarchr  
-  fi # we don't need an else, the rest is below and the vars are already set
-
-  if (echo "$areplist" | grep -q "^$1$" ); then
-    return 0
-  else
-    return 1
-  fi # much nicer than the old function
+  [ "$archrinit" == 0 ] && initarchr
+  echo "$areplist" | grep -q "^$1$"  # much nicer than the old function
 }
 
 getarchname() {
@@ -245,11 +223,9 @@ depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
   debug "addmaintainer('$@')"
-  sed -i.oldmaint 's/^# Maintainer: /# Contributer: /' PKGBUILD
+  sed -i 's/^# Maintainer: /# Contributer: /' PKGBUILD
   sed -i 's/^# $Id:.*$//' PKGBUILD
-  if !(printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD); then
-    return 1
-  fi
+  (printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD) || return 1
 }
 
 addad() {
@@ -304,22 +280,12 @@ dotherest() {
   if [ -n "$maintainer" ]; then
     msg "Changing maintainer information..."
     debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."
-    if (addmaintainer "$maintainer"); then
-      msg "Done"
-    else
-      err "Failed"
-    fi
+    addmaintainer "$maintainer" && msg "Done" || err "Failed"
   fi
   debug "if \$addad then addad..."
-  if [ "$addad" == 1 ]; then
-    addad
-  fi
+  [ "$addad" == 1 ] && addad
   debug "if uchksums..."
-  if uchksums; then
-    msg "checksums for $pkgname updated"
-  else
-    warn "checksums for $pkgname could not be updated!"
-  fi
+  uchksums && msg "checksums for $pkgname updated" || warn "checksums for $pkgname could not be updated!"
   debug "if \$edit, then edit..."
   if [ "$edit" -eq 1 ]; then
     msg "Opening '$pkgname' PKGBUILD with $EDITOR"
@@ -822,7 +788,7 @@ for bin in ${programs[@]}; do
   else
     debug " not found"
     err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr curl gawk jshon packer sed'"
+    err "Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer sed'"
     exit 1
   fi
 done
