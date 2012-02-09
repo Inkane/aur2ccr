@@ -297,7 +297,9 @@ dotherest() {
   depends
   debug "for pkg in ${depends[@]}..."
   for pkg in ${depends[@]}; do 
-    if isinccr $pkg; then 
+    if [ "$pkg" == "java-environment" -o "$pkg" == "java-runtime" ]; then
+      msg "$pkg is a special package in the Chakra repos, continuing"
+    elif isinccr $pkg; then 
       msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
       if !(isinrepos $pkg); then
         let depsnotinrep=$depsnotinrep+1
