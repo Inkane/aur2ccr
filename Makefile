@@ -11,20 +11,20 @@ all: man $(allfiles)
 man: aur2ccr.8.gz $(others)
 
 install: $(allfiles) install-man
-	install -d -m755 "$(DESTDIR)/usr/local/bin"
+	install -d -m755 "$(DESTDIR)/usr/bin"
 	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
-	install -D -m755 $(binfiles) "$(DESTDIR)/usr/local/bin/"
+	install -D -m755 $(binfiles) "$(DESTDIR)/usr/bin/"
 	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
 
 install-unstable: $(allfiles) install-man # this will install the aur2ccr-unstable script, use with caution
-	install -d -m755 "$(DESTDIR)/usr/local/bin"
+	install -d -m755 "$(DESTDIR)/usr/bin"
 	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
-	install -D -m755 $(unstable) "$(DESTDIR)/usr/local/bin/"
+	install -D -m755 $(unstable) "$(DESTDIR)/usr/bin/"
 	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
 
 install-man: # 'make install' calls this, so only do 'make install-man' if all you want is the man page.
-	install -d -m755 "$(DESTDIR)/usr/local/man/man8"
-	install -D -m644 $(manpages) "$(DESTDIR)/usr/local/man/man8/"
+	install -d -m755 "$(DESTDIR)/usr/man/man8"
+	install -D -m644 $(manpages) "$(DESTDIR)/usr/man/man8/"
 
 aur2ccr.8.gz : $(others)
 	gzip -c aur2ccr.8 > aur2ccr.8.gz
