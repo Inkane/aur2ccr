@@ -17,7 +17,7 @@
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.6.1"
+pver="0.6.2"
 confdir="/etc/aur2ccr"
 lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"
@@ -273,6 +273,26 @@ uchksums() {  # update checksums with 'makepkg -gf'
   fi
 }
 
+isinstalled() { # check if $1 is already installed
+  pacman -Qq -- "$1" &>/dev/null
+}
+
+getneedeps() { # get the deps we need from CCR, return in $needeps
+  for dep in "${depends[@]}"; do
+    if isinrepos $dep; then
+      needeps="$needeps"
+    elif isinstalled $dep; then
+      needeps="$needeps"
+    elif isinccr $dep; then
+      needeps="$needeps $dep"
+    else
+      err "dependency $dep cannot be found!"
+      exit 1
+    fi
+  done
+  needeps="$(echo $needeps | sed 's/^ //')"
+}
+
 dotherest() {
   debug "dotherest('$@')"
   local pkgname=$1
@@ -369,9 +389,27 @@ dotherest() {
       return 1
     fi
   else
-    warn "Package '$pkgname' has dependencies outside of the Chakra repos."
-    warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
-    warn "Please test the final .src.tar.gz package manually with ccr."
+    msg "Package '$pkgname' has dependencies outside of the Chakra repos."
+    msg "Attempting to install dependencies with 'ccr'..."
+    msg "(This may take a while)"
+    getneedeps
+    if (ccr -S $needeps); then
+      msg "Succeeded, continuing"
+      if !(makepkg -sfr); then
+        err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+        let badpkgs=$badpkgs+1
+        failedpkgs="$failedpkgs $pkgname"
+        return 1
+      fi
+      msg "Removing packages..."
+      if !(sudo pacman -Rn $needeps); then
+        err "could not remove packages!"
+      fi
+    else
+      warn "Package '$pkgname' has dependencies outside of the Chakra repos and CCR."
+      warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
+      warn "Please test the final .src.tar.gz package manually with ccr."
+    fi
   fi
   if (makepkg --source -f); then
     msg "Package '$pkgname' built successfully."
