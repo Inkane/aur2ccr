@@ -415,6 +415,22 @@ dotherest() {
       mv $pkgpkg "$findir"
       msg "$pkgpkg moved to $findir"
     fi
+    if [ "$install" -eq 1 ]; then
+      msg "Installing $pkgname..."
+      if !(sudo pacman -U $(ls *.pkg.tar.xz)); then
+        warn "pacman failed, trying 'makepkg -i'..."
+        if !(makepkg -if); then
+          err "Could not install $pkgname." 
+          return 1
+        fi
+      fi
+      if isinstalled $pkgname; then
+        msg "$pkgname installed"
+      else
+        err "Could not install $pkgname." 
+        return 1
+      fi
+    fi
   else
     err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
     let badpkgs=$badpkgs+1
@@ -534,7 +550,6 @@ makeccrpkg_u() {
   fi
 }
 
-
 makeccrpkg_f() {
   debug "makeccrpkg_f('$@')"
   cd "$startdir"
@@ -553,8 +568,7 @@ makeccrpkg_f() {
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
-  cd "$pkgname"
-  cd "$dir"
+  cd "$pkgname/$dir"
   if ! test -r PKGBUILD; then
     err "The package you specified does not seem to be a valid source archive."
     let badpkgs=$badpkgs+1
@@ -701,13 +715,14 @@ usage() {
   echo "Create CCR-ready source packages from packages in AUR or Arch repos"
   echo "Example: $(basename $0) twisted"
   echo 
-  echo "Options: "
+  echo "General: "
   echo "  -m <maintainer>	add maintainer information to each PKGBUILD before building"
   echo "                	<maintainer> should be in the form 'My Name (nick) <me@example.com>'"
   echo "  -e			edit the PKGBUILD for each package with \$EDITOR before building"
-  echo "  -a			add an aur2ccr advertisement - add as Contributer: "
-  echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -c			move all CCR source packages into the working directory"
+  echo "  -i			install packages that build successfully, in order to test them"
+  echo
+  echo "Advanced: "
   echo "  -f <file>		create a CCR source package from source package <file>"
   echo "  -u <URL>		... or from an AUR/CCR-compatible source package at <URL>"
   echo "  -d <dir>		... or from a PKGBUILD and (optional) other files in <dir>"
@@ -715,6 +730,10 @@ usage() {
   echo "  -t			use '$tmpdir' as the build directory instead of the current dir"
   echo "   			(all finished src packages will be moved into the working dir, like -c)"
   echo "  -l <logfile>		use 'tee' to send all aur2ccr messages to <logfile>"
+  echo
+  echo "Other: "
+  echo "  -a			add an aur2ccr advertisement - add as Contributer: "
+  echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -h			display this help and exit"
   echo "  -v			print version information and exit"
   echo 
@@ -785,6 +804,8 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       consolidate=1
     elif [ -n "$arg" -a "$arg" == "-l" ]; then
       islfile=1
+    elif [ -n "$arg" -a "$arg" == "-i" ]; then
+      install=1
     elif [ -n "$arg" -a "$arg" == "-h" ]; then
       usage
     elif [ -n "$arg" -a "$arg" == "-v" ]; then
