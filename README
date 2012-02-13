@@ -4,6 +4,7 @@ packages that are ready for uploading to CCR.
 
 Todo: 
 improve popopts function, to allow options to be used like '-ce';
+add $UID checking, quit if run as root;
 major code cleanup, try to reduce by at least a couple hundred lines;
 add optipkg() function to fix some easy errors in PKGBUILDs;
 cannibalize packer and remove it as a dependency;
