@@ -18,6 +18,7 @@
 # prevent running the script as root
 if [[ $EUID == 0 ]]; then
    echo "This script must be not run as root" 
+   echo "aur2ccr will ask you for the password if needed"
    echo "Exiting..."
    exit 1
 fi
