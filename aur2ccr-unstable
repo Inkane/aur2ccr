@@ -1,5 +1,5 @@
-# #!/bin/bash
-# aur2ccr - version 0.6.1
+#!/bin/bash
+# aur2ccr - version 0.6.2
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -781,6 +781,15 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 
 # main()
 debug "main('$@')"
+# prevent running the script as root
+if [[ $EUID == 0 ]]; then
+    err "This script must be not run as root" 
+    err "aur2ccr will ask you for the password if needed"
+    err "Exiting..."
+    debug "script run as root, exiting"
+    exit 1
+fi
+
 # test for important programs that may not be installed 
 for bin in ${programs[@]}; do
   debug "checking for $bin..."
