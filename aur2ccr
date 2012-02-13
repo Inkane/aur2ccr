@@ -1,4 +1,4 @@
-# #!/bin/bash
+#!/bin/bash
 # aur2ccr - version 0.6.1
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
