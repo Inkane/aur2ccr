@@ -15,14 +15,6 @@
 #  the Chakra devs, for making such an awesome distro;
 #  ...and all others who have used aur2ccr or helped in some other way.
 
-# prevent running the script as root
-if [[ $EUID == 0 ]]; then
-   echo "This script must be not run as root" 
-   echo "aur2ccr will ask you for the password if needed"
-   echo "Exiting..."
-   exit 1
-fi
-
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
 pver="0.6.1"
