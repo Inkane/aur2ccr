@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.6.2
+# aur2ccr - version 0.6.3
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -17,7 +17,7 @@
 
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
-pver="0.6.2"
+pver="0.6.3"
 confdir="/etc/aur2ccr"
 lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"
@@ -44,7 +44,7 @@ PINK='\e[1;35m'
 #WHITE='\e[1;37m'
 #BLACK='\e[1;39m'
 ENDCOLOR='\e[0m' 
-programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch packer pacman )
+programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch pacman )
 
 
 # output formatting functions
@@ -103,7 +103,6 @@ err() { # make aur2ccr's error messages prettier and more unified.
 
 clean() {  # clean up temp files
   debug "clean('$@')"
-  debug "cleaning..."
   warn "Keyboard interrupt caught, cleaning up..."
   debug "exiting..."
   exit 1
@@ -164,14 +163,17 @@ isoutofdate() {  # stolen from the isoutofdate() and rpcinfo() functions in 'ccr
 
 vcsver() {  # look for version control system versions, like pkgname-git
   debug "vcsver('$@')"
-  if isinccr "$1-git"; then
+  if isinccr "$1-git"; then # git
     vpkgname="$1-git"
     return 0
-  elif isinccr "$1-bzr"; then
+  elif isinccr "$1-bzr"; then # bazaar
     vpkgname="$1-bzr"
     return 0
-  elif isinccr "$1-svn"; then
+  elif isinccr "$1-svn"; then # subversion
     vpkgname="$1-svn"
+    return 0
+ elif isinccr "$1-hg"; then # mercurial
+    vpkgname="$1-hg"
     return 0
   else
     return 1
@@ -200,22 +202,18 @@ isinaur() {
 isinarchr() {
   debug "isinarchr('$@')"
   msg "Checking Arch repos..."
-  [ "$archrinit" == 0 ] && initarchr
+  [[ "$archrinit" == 0 ]] && initarchr
   echo "$areplist" | grep -q "^$1$"  # much nicer than the old function
 }
 
 getarchname() {
   debug "getarchname('$@')"
-  if isinarchr $1; then
-    archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g')
-  else
-    err "'$1' not found in Arch repos"
-    return 1
-  fi
+  isinarchr $1 && archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g') || err "'$1' not found in Arch repos"
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
   debug "depends($@)"
+  debug "current dir: $(pwd; ls)"
   . PKGBUILD
   IFS=$'\n'
   depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) )
@@ -240,6 +238,7 @@ EOF
 
 uchksums() {  # update checksums with 'makepkg -gf'
   debug "uchksums($@)"
+  debug "current dir: $(pwd; ls)"
   if !(makepkg -gf > "$tmpdir/${PID}${UID}.sums"); then
     err "'makepkg -g' failed in '$(pwd)'!"
     exit 1
@@ -249,12 +248,7 @@ uchksums() {  # update checksums with 'makepkg -gf'
   stype="$(echo $sums | grep -o "^..*sums=")"
   if (echo "$sums" | grep -q "^$stype"); then
     if (grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD); then # if all on one line
-      if (sed -i "s/^$stype.*/$sums/" PKGBUILD); then
-        return 0
-      else
-        err "sed failed while updating checksums"
-        return 1
-      fi
+      sed -i "s/^$stype.*/$sums/" PKGBUILD || err "sed failed while updating checksums"
     elif (grep -q "^$stype" PKGBUILD); then
       stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
       debug "awking..."
@@ -319,6 +313,9 @@ dotherest() {
   for pkg in ${depends[@]}; do 
     if [ "$pkg" == "java-environment" -o "$pkg" == "java-runtime" ]; then
       msg "$pkg is a special package in the Chakra repos, continuing"
+    elif [ "$pkg" == "$pkgname" ]; then
+      warn "dependency cycle detected!"
+      warn "skipping '$pkgname' dependency '$pkg'"
     elif isinccr $pkg; then 
       msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
       if !(isinrepos $pkg); then
@@ -327,7 +324,7 @@ dotherest() {
     elif namelookup $pkg; then
       namelookup $pkg
       if !(namechange $pkg); then
-        err "Something went wrong while attempting to edit the $pkg PKGBUILD"
+        err "Something went wrong while attempting to edit the $pkgname PKGBUILD"
         return 1
       fi
       if isinccr $cpkgname; then
@@ -424,18 +421,15 @@ dotherest() {
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
-  return 0
 }
 
-makeccrpkg() {    # grab a package from AUR, and make it into a CCR-ready src package
+makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src package
   debug "makeccrpkg('$@')"
   cd "$startdir"
   local pkgname=$1
   mkdir -p "$pkgname"
   cd "$pkgname"
-  if test -r "$pkgname.tar.gz"; then 
-    rm "$pkgname.tar.gz"
-  fi
+  [[ -r "$pkgname.tar.gz" ]] && rm "$pkgname.tar.gz"
   if !(wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz"); then
     err "There was an error while trying to download the package."
     let badpkgs=$badpkgs+1
@@ -449,12 +443,7 @@ makeccrpkg() {    # grab a package from AUR, and make it into a CCR-ready src pa
     return 1
   fi
   cd "$pkgname"
-
-  if dotherest "$pkgname"; then
-    return 0
-  else
-    return 1
-  fi
+  dotherest "$pkgname"
 }
 
 
@@ -637,27 +626,27 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   return 0
 }
 
-namechange() {
+namechange() {  # companion function to namelookup()
   debug "namechange('$@')"
-  depends
-  for pkg in ${depends[@]}; do 
-    if namelookup $pkg; then
-      namelookup $pkg
-      if (sed -i "s/\(^[^ ]*depends=.*[(\s'\"]*\)${apkgname}\([\s'\")]*\)/\1${cpkgname}\2/g" PKGBUILD); then
-        return 0
-      else
-        return 1
-      fi
-    fi
+  namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[(\s'\"]\)${apkgname}\([\s'\")]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
+}
+
+aursearch() {  # this code is stolen from 'packer'. This used to be, and is the equivalent of: packer --auronly -Ss $1 
+  debug "aursearch('$@')" >&2
+  RPCURL="https://aur.archlinux.org/rpc.php?type"
+  curl -LfGs --data-urlencode "arg=$1" "$RPCURL=search" | sed -e 's/","/"\n"/g' -e 's/\\//g' > "$tmpdir/$1$UID.search" 
+  parsefile="$tmpdir/$1$UID.search"
+  IFS=$'\n'
+  aurname=( $(grep -F '"Name":"' "$parsefile" | cut -d '"' -f 4) )
+  version=( $(grep -F '"Version":"' "$parsefile" | cut -d '"' -f 4) )
+  description=( $(grep -F '"Description":"' "$parsefile" | sed -e 's/^"Description":"//' -e 's/"$/ /') )
+  aurtotal="${#aurname[@]}"
+  for ((i=0 ; i<$aurtotal ; i++)); do
+    printf "aur/${aurname[$i]} ${version[$i]}\n    ${description[$i]}\n"
   done
 }
 
-aursearch() {  # uses 'packer'
-  debug "aursearch('$@')" >&2
-  packer --auronly -Ss $1
-}
-
-pkgsearch() { # there is no reason for this function to ever be called except right after isinarchr returns 1
+pkgsearch() {  # there is no reason for this function to ever be called except right after isinarchr returns 1
   debug "pkgsearch('$@')"
   warn "Package '$1' not found in AUR or Arch repos."
   warn "Did you mean: "
@@ -837,7 +826,7 @@ for bin in ${programs[@]}; do
   else
     debug " not found"
     err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer sed'"
+    err "Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon sed'"
     exit 1
   fi
 done
@@ -878,7 +867,7 @@ apconf="${apconf-archrepos.pacman.conf}" acconf="${acconf-aur2ccr.conf}"
 startdir="${startdir-$(pwd)}"            findir="${findir-$(pwd)}" 
 consolidate="${consolidate-0}"           edit="${edit-0}" addad="${addad-0}" 
 
-if [ -z "$1" -o "$1" == "--help" ]; then  # if no arguments were supplied, print usage info
+if [ -z "$1" -o "$1" == "--help" -o "$1" == "-h" ]; then  # if no arguments were supplied, print usage info
   usage
 fi
 

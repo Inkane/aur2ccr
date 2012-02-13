@@ -6,7 +6,6 @@ Todo:
 improve popopts function, to allow options to be used like '-ce';
 major code cleanup, try to reduce by at least a couple hundred lines;
 add optipkg() function to fix some easy errors in PKGBUILDs;
-cannibalize packer and remove it as a dependency;
 add -i option to install packages;
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
