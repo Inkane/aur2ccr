@@ -837,7 +837,7 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 debug "main('$@')"
 # prevent running the script as root
 if [[ $EUID == 0 ]]; then
-    err "This script must be not run as root!"
+    err "This script must not be run as root!"
     err "aur2ccr will ask for your password if needed."
     err "Exiting..."
     debug "script run as root, exiting"
