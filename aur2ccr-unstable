@@ -32,6 +32,7 @@ badpkgs=0
 consolidate=0
 edit=0
 addad=0
+install=0
 archrinit=0
 newline='
 '
@@ -239,24 +240,18 @@ EOF
 uchksums() {  # update checksums with 'makepkg -gf'
   debug "uchksums($@)"
   debug "current dir: $(pwd; ls)"
-  if !(makepkg -gf > "$tmpdir/${PID}${UID}.sums"); then
-    err "'makepkg -g' failed in '$(pwd)'!"
-    exit 1
-  else
-    sums="$(cat "$tmpdir/${PID}${UID}.sums")"
-  fi
+  (makepkg -gf > "$tmpdir/${PID}${UID}.sums" && export sums="$(cat "$tmpdir/${PID}${UID}.sums")") || (err "'makepkg -g' failed in '$(pwd)'!"; exit 1) || exit 1
   stype="$(echo $sums | grep -o "^..*sums=")"
   if (echo "$sums" | grep -q "^$stype"); then
-    if (grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD); then # if all on one line
+    if grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD; then # if all on one line
       sed -i "s/^$stype.*/$sums/" PKGBUILD || err "sed failed while updating checksums"
-    elif (grep -q "^$stype" PKGBUILD); then
+    elif grep -q "^$stype" PKGBUILD; then
       stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
       debug "awking..."
       local new="$(awk -v "newsums=$sums" -v "stype=$stype" '$1 ~ stype { t = 1; } t == 1 { if ($0 ~ "\)") { t = 0; print(newsums); next; } next; } { print; }' PKGBUILD 2>/dev/null)" # sheesh. awk courtesy of pr3d4t0r, I haven't a clue how it works.
       debug "sending awk output to PKGBUILD..."
       echo "$new" > PKGBUILD
-      return 0
-    elif [ -z "$sums" ]; then
+    elif [[ -z "$sums" ]]; then
       return 0
     else
       return 1
@@ -293,348 +288,15 @@ getneedeps() { # get the deps we need from CCR, return in $needeps
   needeps="$(echo $needeps | sed 's/^ //')"
 }
 
-dotherest() {
-  debug "dotherest('$@')"
-  local pkgname=$1
-  depsnotinrep=0
-  if [ -n "$maintainer" ]; then
-    msg "Changing maintainer information..."
-    debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."
-    addmaintainer "$maintainer" && msg "Done" || err "Failed"
-  fi
-  debug "if \$addad then addad..."
-  [ "$addad" == 1 ] && addad
-  debug "if uchksums..."
-  uchksums && msg "checksums for $pkgname updated" || warn "checksums for $pkgname could not be updated!"
-  debug "if \$edit, then edit..."
-  if [ "$edit" -eq 1 ]; then
-    msg "Opening '$pkgname' PKGBUILD with $EDITOR"
-    warn "Note: dependencies have not yet been checked, so the PKGBUILD"
-    warn " may be changed after you modify it."
-    debug "\$EDITOR PKGBUILD"
-    ${EDITOR-vi} PKGBUILD
-  fi
-  depends
-  debug "for pkg in ${depends[@]}..."
-  for pkg in ${depends[@]}; do 
-    if [ "$pkg" == "java-environment" -o "$pkg" == "java-runtime" ]; then
-      msg "$pkg is a special package in the Chakra repos, continuing"
-    elif [ "$pkg" == "$pkgname" ]; then
-      warn "dependency cycle detected!"
-      warn "skipping '$pkgname' dependency '$pkg'"
-    elif isinccr $pkg; then 
-      msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
-      if !(isinrepos $pkg); then
-        let depsnotinrep=$depsnotinrep+1
-      fi
-    elif namelookup $pkg; then
-      namelookup $pkg
-      if !(namechange $pkg); then
-        err "Something went wrong while attempting to edit the $pkgname PKGBUILD"
-        return 1
-      fi
-      if isinccr $cpkgname; then
-        msg "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
-        if !(isinrepos $cpkgname); then
-          let depsnotinrep=$depsnotinrep+1
-        fi
-      else 
-        err "There seems to be a bad definition in $namesconf. Please fix this."
-        err "The offending line is: '$apkgname=$cpkgname'"
-        let badpkgs=$badpkgs+1
-        return 1
-      fi
-    else
-      debug "depsnotinrep++"
-      let depsnotinrep=$depsnotinrep+1
-      msg "$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
-      if isinaur $pkg; then
-        debug "pushd `pwd`"
-        pushd "$(pwd)" >/dev/null
-        if !(makeccrpkg $pkg); then
-          err "Some error occurred while building '$pkg'"
-          err "Without this dependency, $pkgname cannot be built"
-          debug "popd"
-          popd >/dev/null
-          return 1
-        else
-          debug "popd"
-          popd >/dev/null
-        fi
-      elif isinarchr $pkg; then
-        msg "'$pkg' found in the Arch repos..."
-        debug "pushd `pwd`"
-        pushd "$(pwd)" >/dev/null
-        if !(makeccrpkg_r $pkg); then 
-          err "Some error occurred while building '$pkg'"
-          err "Without this dependency, $pkgname cannot be built"
-          debug "popd"
-          popd >/dev/null
-          return 1
-        else
-          debug "popd"
-          popd >/dev/null
-        fi
-      else
-        err "Sorry, dependency '$pkg' cannot be found."
-        err "Without this dependency, $pkgname cannot be built"
-        let badpkgs=$badpkgs+1
-        return 1
-      fi
-    fi
-  done
-  if [ "$depsnotinrep" -eq 0 ]; then
-    msg "Testing package '$pkgname'..."
-    if !(makepkg -sfr); then
-      err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
-      let badpkgs=$badpkgs+1
-      failedpkgs="$failedpkgs $pkgname"
-      return 1
-    fi
-  else
-    msg "Package '$pkgname' has dependencies outside of the Chakra repos."
-    msg "Attempting to install dependencies with 'ccr'..."
-    msg "(This may take a while)"
-    getneedeps
-    if (ccr -S $needeps); then
-      msg "Succeeded, continuing"
-      if !(makepkg -sfr); then
-        err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
-        let badpkgs=$badpkgs+1
-        failedpkgs="$failedpkgs $pkgname"
-        return 1
-      fi
-      msg "Removing packages..."
-      if !(sudo pacman -Rn $needeps); then
-        err "could not remove packages!"
-      fi
-    else
-      warn "Package '$pkgname' has dependencies outside of the Chakra repos and CCR."
-      warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
-      warn "Please test the final .src.tar.gz package manually with ccr."
-    fi
-  fi
-  if (makepkg --source -f); then
-    msg "Package '$pkgname' built successfully."
-    if [ "$consolidate" -eq 1 ]; then
-      pkgpkg="$(ls $pkgname*.src.tar.gz)"
-      mv $pkgpkg "$findir"
-      msg "$pkgpkg moved to $findir"
-    fi
-    if [ "$install" -eq 1 ]; then
-      msg "Installing $pkgname..."
-      if !(sudo pacman -U $(ls *.pkg.tar.xz)); then
-        warn "pacman failed, trying 'makepkg -i'..."
-        if !(makepkg -if); then
-          err "Could not install $pkgname." 
-          return 1
-        fi
-      fi
-      if isinstalled $pkgname; then
-        msg "$pkgname installed"
-      else
-        err "Could not install $pkgname." 
-        return 1
-      fi
-    fi
-  else
-    err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-}
-
-makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src package
-  debug "makeccrpkg('$@')"
-  cd "$startdir"
-  local pkgname=$1
-  mkdir -p "$pkgname"
-  cd "$pkgname"
-  [[ -r "$pkgname.tar.gz" ]] && rm "$pkgname.tar.gz"
-  if !(wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz"); then
-    err "There was an error while trying to download the package."
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  if !(tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz"); then
-    err "tar could not extract the archive"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  cd "$pkgname"
-  dotherest "$pkgname"
-}
-
-
-makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-ready src package
-  debug "makeccrpkg_r('$@')"
-  cd "$startdir"
-  local pkgname=$1
-  mkdir -p "$pkgname"
-  cd "$pkgname"
-  if test -r "$pkgname.tar.gz"; then 
-    rm "$pkgname.tar.gz"
-  fi
-  #
-  #	get Arch package with PKGBUILD, .install, etc, using git or perl script or whatever 
-  #
-  # extract the package if needed
-  #
-  getarchname $pkgname
-  if [ "$archname" == 0 ]; then
-    err "'$pkgname' cannot be found"
-    return 1
-  fi # else...
-  msg "found '$pkgname' as '$archname'"
-  if (sudo abs "$archname"); then
-    rm -rf "./$pkgname"
-    if (sudo mv "/var/abs/$archname" "./$pkgname"); then
-      if (sudo chown -hR $USER:$GROUPS "./$pkgname"); then
-        msg "$pkgname info retrieved from Arch repos successfully"
-      else
-        err "chown failed"
-	return 1
-      fi
-    else
-      err "could not move /var/abs/$archname to working dir"
-      let badpkgs=$badpkgs+1
-      return 1
-    fi
-  else
-    err "abs failed"
-    let badpkgs=$badpkgs+1
-    return 1
-  fi
-  #
-  #  ^ this is a quick fix ^
-  #
-  cd "$pkgname" #this should cd to wherever the stuff above put the PKGBUILD
-  if dotherest "$pkgname"; then
-    return 0
-  else
-    return 1
-  fi
-}
-  
-makeccrpkg_u() {
-  debug "makeccrpkg_u('$@')"
-  cd "$startdir"
-  local pkgname="$(basename "$url" | sed 's/\([^\.]\)\..*/\1/')"  # if $url is http://example.com/path/package.tar.gz, $pkgname is set to "package".
-  mkdir -p "$pkgname"
-  cd "$pkgname"
-  myfile="$BASHPID-$(basename "$url")"
-  if !(wget -O "$myfile" "$url"); then 
-    err "There was an error while trying to download the package"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  dir="$(tar -taf "$myfile" | head -1)"
-  if !(tar -xaf "$myfile"); then
-    err "tar could not extract the archive"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  cd "$dir"
-  if ! test -r PKGBUILD; then
-    err "The package you specified does not seem to be a valid source archive."
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-
-  if dotherest "$pkgname"; then
-    return 0
-  else
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-}
-
-makeccrpkg_f() {
-  debug "makeccrpkg_f('$@')"
-  cd "$startdir"
-  if ! test -r "$file"; then
-    err "'$file' cannot be opened or does not exist"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  local pkgname="$(basename "$file" | sed 's/\([^\.]\)\..*/\1/')"
-  mkdir -p "$pkgname"
-  dir="$(tar -taf "$file" | head -1)"
-  if !(tar -xaf "$file" -C "$pkgname"); then
-    err "tar could not extract the archive"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  cd "$pkgname/$dir"
-  if ! test -r PKGBUILD; then
-    err "The package you specified does not seem to be a valid source archive."
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-
-  if dotherest "$pkgname"; then
-    return 0
-  else
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-}
-
-makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to -d)
-  debug "makeccrpkg_d('$@')"
-  cd "$startdir"
-  local pkgname="$(basename "$pkgdir")"
-  if test -d "$pkgdir"; then
-    cd "$pkgdir"
-  else
-    err "$pkgdir is not a directory or does not exist"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi; if ! test -r "PKGBUILD"; then
-    err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  cd "$startdir"
-  if !(mkdir -p "$pkgname"); then
-    err "cannot create directory '$startdir/$pkgname'"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi; if !(cp -r "$pkgdir" "$pkgname/"); then
-    err "cannot copy files from '$pkgdir'"
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
-  cd "$pkgname/$pkgname"
-
-  if dotherest "$pkgname"; then
-    return 0
-  else
-    let badpkgs=$badpkgs+1
-    failedpkgs="$failedpkgs $pkgname"
-    return 1
-  fi
+logerr() {  # keep track of errors; $1 is the package name
+  let badpkgs=$badpkgs+1
+  export failedpkgs="$failedpkgs $1"
 }
 
 namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   debug "namelookup('$@')"
-  if test -r "$namesconf"; then
-    if (grep -q "$1=..*" "$namesconf"); then
+  if [[ -r "$namesconf" ]]; then
+    if grep -q "$1=..*" "$namesconf"; then
       apkgname="$1"
       cpkgname="$(grep "^$1=..*" "$namesconf" | sed "s/$1=//")"
     else
@@ -643,12 +305,178 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   else 
     return 1
   fi
-  return 0
 }
 
 namechange() {  # companion function to namelookup()
   debug "namechange('$@')"
   namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[(\s'\"]\)${apkgname}\([\s'\")]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
+}
+
+dotherest() {  # this used to be 150 lines, but I managed to get it down to a slightly more reasonable 79.
+  debug "dotherest('$@')"
+  local pkgname=$1
+  depsnotinrep=0
+  [[ -n "$maintainer" ]] && (msg "Changing maintainer information..."; debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."; (addmaintainer "$maintainer" && msg "Done" || err "Failed"))
+  debug "if \$addad then addad..."
+  [[ "$addad" == 1 ]] && addad
+  debug "if uchksums..."
+  (uchksums && msg "checksums for $pkgname updated") || warn "checksums for $pkgname could not be updated!"
+  debug "if \$edit, then edit..."
+  [[ "$edit" -eq 1 ]] && (msg "Opening '$pkgname' PKGBUILD with $EDITOR"; warn "Note: dependencies have not yet been checked, so the PKGBUILD"; warn " may be changed after you modify it."; debug "\$EDITOR PKGBUILD"; ${EDITOR-vi} PKGBUILD)
+  depends
+  debug "for pkg in ${depends[@]}..."
+  for pkg in ${depends[@]}; do 
+    if [ "$pkg" == "java-environment" -o "$pkg" == "java-runtime" ]; then
+      msg "$pkg is a special package in the Chakra repos, continuing"
+    elif [[ "$pkg" == "$pkgname" ]]; then
+      warn "dependency cycle detected!"; warn "skipping '$pkgname' dependency '$pkg'"
+    elif isinccr $pkg; then 
+      msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
+      isinrepos $pkg || logerr $pkgname
+    elif namelookup $pkg; then
+      namechange $pkg || (err "Something went wrong while attempting to edit the $pkgname PKGBUILD"; logerr $pkg; exit 1) || return 1
+      if isinccr $cpkgname; then
+        msg "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+        isinrepos $cpkgname || let depsnotinrep=$depsnotinrep+1
+      else 
+        err "There seems to be a bad definition in '$namesconf'. Please fix this."; err "The offending line is: '$apkgname=$cpkgname'"; logerr $pkg
+        return 1
+      fi
+    else
+      let depsnotinrep=$depsnotinrep+1
+      msg "$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages..."
+      if isinaur $pkg; then
+        debug "pushd `pwd`"
+        pushd "$(pwd)" >/dev/null
+        (makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+      elif isinarchr $pkg; then
+        msg "'$pkg' found in the Arch repos..."; debug "pushd `pwd`"
+        pushd "$(pwd)" >/dev/null
+        (makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+      else
+        err "Sorry, dependency '$pkg' cannot be found."; err "Without this dependency, $pkgname cannot be built"; logerr $pkg
+        return 1
+      fi
+    fi
+  done
+  if [ "$depsnotinrep" -eq 0 ]; then
+    msg "Testing package '$pkgname'..."
+    makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
+  else
+    msg "Package '$pkgname' has dependencies outside of the Chakra repos."
+    msg "Attempting to install dependencies with 'ccr'..."; msg "(This may take a while)"
+    getneedeps
+    if (ccr -S $needeps); then
+      msg "Succeeded, continuing"
+      makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
+      msg "Removing packages..."
+      (sudo pacman -Rn $needeps && msg "Packages removed") || err "could not remove packages!"
+    else
+      warn "Package '$pkgname' has dependencies outside of the Chakra repos and CCR."; warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."; warn "Please test the final .src.tar.gz package manually with ccr."
+    fi
+  fi
+  if makepkg --source -f; then
+    msg "Package '$pkgname' built successfully."
+    [[ "$consolidate" -eq 1 ]] && (pkgpkg="$(ls $pkgname*.src.tar.gz)"; (mv $pkgpkg "$findir" && msg "$pkgpkg moved to $findir") || exit 1) || return 1
+    if [[ "$install" -eq 1 ]]; then
+      msg "Installing $pkgname..."
+      if !(sudo pacman -U $(ls *.pkg.tar.xz)); then
+        warn "pacman failed, trying 'makepkg -i'..."
+        makepkg -if || (err "Could not install $pkgname."; exit 1) || return 1
+      fi
+      (isinstalled $pkgname && msg "$pkgname installed") || (err "Could not install $pkgname."; exit 1) || return 1
+    fi
+  else
+    err "Some error occurred, check the $pkgname PKGBUILD in '$(pwd)'"
+    logerr $pkgname
+    return 1
+  fi
+}
+
+makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src package
+  debug "makeccrpkg('$@')"
+  cd "$startdir"
+  local pkgname=$1
+  mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname"
+  [[ -r "$pkgname.tar.gz" ]] && rm "$pkgname.tar.gz"
+  wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz" || (err "There was an error while trying to download the package."; logerr $pkgname; exit 1) || return 1
+  (tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz") || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname"
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+}
+
+makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-ready src package
+  debug "makeccrpkg_r('$@')"
+  cd "$startdir"
+  local pkgname=$1
+  mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname"
+  [[ -r "$pkgname.tar.gz" ]] && rm "$pkgname.tar.gz"
+  #
+  #	get Arch package with PKGBUILD, .install, etc, using git or perl script or whatever 
+  #
+  # extract the package if needed
+  #
+  getarchname $pkgname
+  [[ "$archname" == 0 ]] && (err "'$pkgname' cannot be found"; exit 1) || return 1
+  msg "found '$pkgname' as '$archname'"
+  if sudo abs "$archname"; then
+    rm -rf "./$pkgname"
+    if sudo mv "/var/abs/$archname" "./$pkgname"; then
+      (sudo chown -hR $USER:$GROUPS "./$pkgname" && msg "$pkgname info retrieved from Arch repos successfully") || (err "chown failed"; logerr $pkgname; exit 1) || return 1
+    else
+      err "could not move /var/abs/$archname to working dir"; logerr $pkgname
+      return 1
+    fi
+  else
+    err "abs failed"; logerr $pkgname
+    return 1
+  fi
+  #  ^ this is a quick fix ^
+  cd "$pkgname"
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+}
+  
+makeccrpkg_u() {  # make a package from a URL
+  debug "makeccrpkg_u('$@')"
+  cd "$startdir"
+  local pkgname="$(basename "$url" | sed 's/\([^\.]\)\..*/\1/')"; local pkgname="${pkgname-$BASHPID}" # if $url is http://example.com/path/package.tar.gz, $pkgname is set to "package".
+  local myfile="$(basename "$url")"; local myfile="${myfile-$BASHPID}"
+  mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname"
+  wget -O "$myfile" "$url" || (err "There was an error while trying to download the package"; logerr $pkgname; exit 1) || return 1
+  local dir="$(tar -taf "$myfile" | head -1)"
+  tar -xaf "$myfile" || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
+  cd "$dir"
+  [[ -r PKGBUILD ]] || (err "The package you specified does not seem to be a valid source archive."; logerr $pkgname; exit 1) || return 1
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+}
+
+makeccrpkg_f() {  # make a package from a *.src.tar.gz file
+  debug "makeccrpkg_f('$@')"
+  cd "$startdir"
+  local pkgname="$(basename "$file" | sed 's/\([^\.]\)\..*/\1/')" # same as in _u above
+  local dir="$(tar -taf "$file" | head -1)"
+  [[ -r "$file" ]] || (err "'$file' cannot be opened or does not exist"; logerr $pkgname; exit 1) || return 1
+  mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
+  tar -xaf "$file" -C "$pkgname" || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname/$dir"
+  [[ -r PKGBUILD ]] || (err "The package you specified does not seem to be a valid source archive."; logerr $pkgname; exit 1) || return 1
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+}
+
+makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to -d)
+  debug "makeccrpkg_d('$@')"
+  cd "$startdir"
+  local pkgname="$(basename "$pkgdir")"
+  ([[ -d "$pkgdir" ]] && cd "$pkgdir") || (err "$pkgdir is not a directory or does not exist"; logerr $pkgname; exit 1) || return 1
+  [[ -r "PKGBUILD" ]] || (err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"; logerr $pkgname; exit 1) || return 1
+  cd "$startdir"
+  mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
+  cp -r "$pkgdir" "$pkgname/" || (err "cannot copy files from '$pkgdir'"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgname/$pkgname"
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
 }
 
 aursearch() {  # this code is stolen from 'packer'. This used to be, and is the equivalent of: packer --auronly -Ss $1 
