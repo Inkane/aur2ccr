@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.6.4
+# aur2ccr - version 0.6.5
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -16,7 +16,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.6.4"
+pname="aur2ccr"         pver="0.6.5"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -34,35 +34,42 @@ programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon lib
 
 # output formatting functions
 debug() { # echo things when called like 'debug doing stuff...' only when debug=1
+  pushd "$(pwd)" >/dev/null; cd "$startdir"
   if [[ "$debug" == 1 ]]; then
     if [[ "$1" == "-n" ]]; then
       local eopts="$1"; shift
     fi; ([[ -n "$logfile" ]] && echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
-  fi
+  fi; popd >/dev/null
 }
 
 msg() { # make aur2ccr's normal output prettier and more unified.
   debug "msg('$@')"
+  pushd "$(pwd)" >/dev/null; cd "$startdir"
   if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
   fi; ([[ -n "$logfile" ]] && echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" 
+  popd >/dev/null
 }
 
 warn() { # make aur2ccr's warning messages prettier and more unified.
   debug "warn('$@')"
+  pushd "$(pwd)" >/dev/null; cd "$startdir"
   if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
   fi; ([[ -n "$logfile" ]] && echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
+  popd >/dev/null
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
   debug "err('$@')"
+  pushd "$(pwd)" >/dev/null; cd "$startdir"
   if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
   fi; ([[ -n "$logfile" ]] && echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
+  popd >/dev/null
 }
 
 # other functions
@@ -156,13 +163,20 @@ isinarchr() {
 
 getarchname() {
   debug "getarchname('$@')"
-  isinarchr $1 && archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g') || err "'$1' not found in Arch repos"
+  if isinarchr $1; then
+    archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g')
+  else
+    err "'$1' not found in Arch repos"
+  fi
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
+  # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
+  local pkgname=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install= 
   debug "depends($@)"; debug "current dir: $(pwd; ls)"
   . PKGBUILD; IFS=$'\n'
   depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) ); IFS=' '
+  debug "depends=( ${depends[@]} )"
 }
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
@@ -174,7 +188,7 @@ addmaintainer() {  # change maintainer info in the PKGBUILD
 
 addad() {
   debug "addad('$@')"
-  ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporing aur2ccr! :)"
+  ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporting aur2ccr! :)"
 2i
 # Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
 .
@@ -185,11 +199,17 @@ EOF
 uchksums() {  # update checksums with 'makepkg -gf'
   debug "uchksums($@)"
   debug "current dir: $(pwd; ls)"
-  (makepkg -gf > "$tmpdir/${PID}${UID}.sums" && export sums="$(cat "$tmpdir/${PID}${UID}.sums")") || (err "'makepkg -g' failed in '$(pwd)'!"; exit 1) || exit 1
+  if makepkg -gf > "$tmpdir/${PID}${UID}.sums"; then
+    sums="$(cat "$tmpdir/${PID}${UID}.sums")"
+  else
+    err "'makepkg -g' failed in '$(pwd)'!"
+    return 1
+  fi
   stype="$(echo $sums | grep -o "^..*sums=")"
   if echo "$sums" | grep -q "^$stype"; then
     if grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD; then # if all on one line
-      sed -i "s/^$stype.*/$sums/" PKGBUILD || err "sed failed while updating checksums"
+      debug "s/^$stype.*/$sums/"
+      sed -i "s/^$stype.*/$sums/" PKGBUILD || (err "sed failed while updating checksums"; exit 1) || return 1
     elif grep -q "^$stype" PKGBUILD; then
       stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
       debug "awking..."
@@ -214,10 +234,12 @@ optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors -- 
 }
 
 isinstalled() { # check if $1 is already installed
+  debug "isinstalled('$@')"
   pacman -Qq -- "$1" &>/dev/null
 }
 
 getneedeps() { # get the deps we need from CCR, return in $needeps
+  debug "getneedeps($@)"
   for dep in "${depends[@]}"; do
     if isinrepos $dep; then
       needeps="$needeps"
@@ -230,10 +252,12 @@ getneedeps() { # get the deps we need from CCR, return in $needeps
       exit 1
     fi
   done
-  needeps="$(echo $needeps | sed 's/^ //')"
+  needeps="$(echo $needeps | sed 's/^\s*//')"
+  debug "neepeds='$needeps'"
 }
 
 logerr() {  # keep track of errors; $1 is the package name
+  debug "logerr('$@')"
   let badpkgs=$badpkgs+1
   export failedpkgs="$failedpkgs $1"
 }
@@ -277,7 +301,7 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down to a sl
       warn "dependency cycle detected!"; warn "skipping '$pkgname' dependency '$pkg'"
     elif isinccr $pkg; then 
       msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
-      isinrepos $pkg || logerr $pkgname
+      isinrepos $pkg || let depsnotinrep=$depsnotinrep+1
     elif namelookup $pkg; then
       namechange $pkg || (err "Something went wrong while attempting to edit the $pkgname PKGBUILD"; logerr $pkg; exit 1) || return 1
       if isinccr $cpkgname; then
@@ -304,14 +328,17 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down to a sl
       fi
     fi
   done
-  if [ "$depsnotinrep" -eq 0 ]; then
+  if [[ "$depsnotinrep" -eq 0 ]]; then
     msg "Testing package '$pkgname'..."
     makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
   else
     msg "Package '$pkgname' has dependencies outside of the Chakra repos."
     msg "Attempting to install dependencies with 'ccr'..."; msg "(This may take a while)"
     getneedeps
-    if (ccr -S $needeps); then
+    if [[ -z "$needeps" ]]; then
+      msg "Oops, looks like you already have all these dependencies installed."
+      makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
+    elif (ccr -S $needeps); then
       msg "Succeeded, continuing"
       makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
       msg "Removing packages..."
@@ -322,10 +349,12 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down to a sl
   fi
   if makepkg --source -f; then
     msg "Package '$pkgname' built successfully."
-    [[ "$consolidate" -eq 1 ]] && (pkgpkg="$(ls $pkgname*.src.tar.gz)"; (mv $pkgpkg "$findir" && msg "$pkgpkg moved to $findir") || exit 1) || return 1
-    if [[ "$install" -eq 1 ]]; then
+    if [[ "$consolidate" -eq 1 ]]; then
+      pkgpkg="$(ls $pkgname*.src.tar.gz)"
+      (mv $pkgpkg "$findir" && msg "$pkgpkg moved to $findir") || (err "$pkgpkg could not be moved to $findir"; logerr $pkgname; exit 1) || return 1
+    fi; if [[ "$install" -eq 1 ]]; then
       msg "Installing $pkgname..."
-      if !(sudo pacman -U $(ls *.pkg.tar.xz)); then
+      if ! sudo pacman -U $(ls *.pkg.tar.xz); then
         warn "pacman failed, trying 'makepkg -i'..."
         makepkg -if || (err "Could not install $pkgname."; exit 1) || return 1
       fi
@@ -358,11 +387,12 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
   mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
   cd "$pkgname"
   [[ -r "$pkgname.tar.gz" ]] && rm "$pkgname.tar.gz"
-  # get Arch package with PKGBUILD, .install, etc, using perl or whatever 
-  # extract the package if needed
+  # get Arch package with PKGBUILD, .install, etc, using perl or whatever - extract the package if needed
   getarchname $pkgname
-  [[ "$archname" == 0 ]] && (err "'$pkgname' cannot be found"; exit 1) || return 1
-  msg "found '$pkgname' as '$archname'"
+  if [[ -z "$archname" || "$archname" == 0 ]]; then
+    err "'$pkgname' cannot be found"; logerr $pkgname
+    return 1
+  fi; msg "found '$pkgname' as '$archname'"
   if sudo abs "$archname"; then
     rm -rf "./$pkgname"
     if sudo mv "/var/abs/$archname" "./$pkgname"; then
@@ -374,8 +404,7 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
   else
     err "abs failed"; logerr $pkgname
     return 1
-  fi
-  #  ^ this is a quick fix ^
+  fi  #  ^ this is a quick fix ^
   cd "$pkgname"
   dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
 }
@@ -412,11 +441,13 @@ makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to
   debug "makeccrpkg_d('$@')"
   cd "$startdir"
   local pkgname="$(basename "$pkgdir")"
-  ([[ -d "$pkgdir" ]] && cd "$pkgdir") || (err "$pkgdir is not a directory or does not exist"; logerr $pkgname; exit 1) || return 1
-  [[ -r "PKGBUILD" ]] || (err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"; logerr $pkgname; exit 1) || return 1
+  [[ -d "$pkgdir" ]] || (err "$pkgdir is not a directory or does not exist"; logerr $pkgname; exit 1) || return 1
+  cd "$pkgdir"; [[ -r "PKGBUILD" ]] || (debug "cd: `pwd`"; err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"; logerr $pkgname; exit 1) || return 1
   cd "$startdir"
   mkdir -p "$pkgname" || (err "cannot create directory '$startdir/$pkgname'"; logerr $pkgname; exit 1) || return 1
-  cp -r "$pkgdir" "$pkgname/" || (err "cannot copy files from '$pkgdir'"; logerr $pkgname; exit 1) || return 1
+  if [[ "$pkgdir" != "$pkgname/$pkgname" && "$pkgdir" != "$(pwd)/$pkgname/$pkgname" && "$pkgdir" != "./$pkgname/$pkgname" ]]; then # This is bad
+    cp -r "$pkgdir" "$pkgname/" || (err "cannot copy files from '$pkgdir'"; logerr $pkgname; exit 1) || return 1
+  fi
   cd "$pkgname/$pkgname"
   dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
 }
@@ -673,11 +704,10 @@ if [[ "$badpkgs" -gt 0 ]]; then
   debug "at least $badpkgs packages failed, exiting..."
   exit 1
 else
-  msg "$badpkgs package(s) failed"
-  debug "0 pkgs failed, exiting..."
+  msg "$badpkgs package(s) failed"; debug "0 pkgs failed, exiting..."
   warn "Remember, just because aur2ccr seems to have succeeded, does not mean the package(s)"
   warn "will work. Please thoroughly test all packages BEFORE uploading them to CCR."
   warn "Broken packages may be removed without warning."
   exit 0
 fi
-[[ -n "$failedpkgs" ]] && (err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."; exit 1) || exit 1
+([[ -n "$failedpkgs" ]] && (err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."; exit 1) || exit 0
