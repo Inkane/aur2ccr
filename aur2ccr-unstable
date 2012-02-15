@@ -258,8 +258,8 @@ getneedeps() { # get the deps we need from CCR, return in $needeps
 
 logerr() {  # keep track of errors; $1 is the package name
   debug "logerr('$@')"
-  let badpkgs=$badpkgs+1
-  export failedpkgs="$failedpkgs $1"
+  [[ -n "$1" ]] && let badpkgs=$badpkgs+1
+  [[ -n "$1" ]] && failedpkgs="$failedpkgs $1"
 }
 
 namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
@@ -695,14 +695,13 @@ for pkgname in $args; do
     checkaur $pkgname
   fi
 done
-[[ -n "$url" ]] && makeccrpkg_u
-[[ -n "$file" ]] && makeccrpkg_f
-[[ -n "$pkgdir" ]] && makeccrpkg_d
+[[ -n "$url" ]] && makeccrpkg_u || logerr $url
+[[ -n "$file" ]] && makeccrpkg_f || logerr $file
+[[ -n "$pkgdir" ]] && makeccrpkg_d || logerr $pkgdir
 # finish up
 if [[ "$badpkgs" -gt 0 ]]; then
   err "$badpkgs package(s) failed"
-  debug "at least $badpkgs packages failed, exiting..."
-  exit 1
+  debug "at least $badpkgs packages failed..."
 else
   msg "$badpkgs package(s) failed"; debug "0 pkgs failed, exiting..."
   warn "Remember, just because aur2ccr seems to have succeeded, does not mean the package(s)"
@@ -710,4 +709,4 @@ else
   warn "Broken packages may be removed without warning."
   exit 0
 fi
-([[ -n "$failedpkgs" ]] && (err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."; exit 1) || exit 0
+([[ -n "$failedpkgs" ]] && (err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."; exit 1)) || exit 0
