@@ -581,7 +581,7 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 # main()
 debug "main('$@')"
 # prevent running the script as root
-([[ $EUID == 0 ]] && (err "This script must not be run as root!"; err "aur2ccr will ask for your password if needed."; err "Exiting..."; debug "script run as root, exiting"; exit 1) || exit 1
+([[ $EUID == 0 ]] && (err "This script must not be run as root!"; err "aur2ccr will ask for your password if needed."; err "Exiting..."; debug "script run as root, exiting"; exit 1)) || exit 1
 # test for important programs that may not be installed 
 for bin in ${programs[@]}; do
   debug "checking for $bin..."
