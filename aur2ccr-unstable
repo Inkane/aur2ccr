@@ -34,69 +34,47 @@ programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon lib
 
 # output formatting functions
 debug() { # echo things when called like 'debug doing stuff...' only when debug=1
-  if [ "$debug" == 1 ]; then
-    if [ "$1" == "-n" ]; then
-      local eopts="$1"
-      shift
-    fi
-    if [ -n "$logfile" ]; then
-      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@" | tee -a "$logfile"
-    else
-      echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
-    fi
+  if [[ "$debug" == 1 ]]; then
+    if [[ "$1" == "-n" ]]; then
+      local eopts="$1"; shift
+    fi; ([[ -n "$logfile" ]] && echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${PINK}++>${ENDCOLOR}" "$@"
   fi
 }
 
 msg() { # make aur2ccr's normal output prettier and more unified.
   debug "msg('$@')"
-  if [ "$1" == "-n" ]; then
+  if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
-  fi
-  if [ -n "$logfile" ]; then
-    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
-  else
-    echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" 
-  fi
+  fi; ([[ -n "$logfile" ]] && echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${BLUE}==>${ENDCOLOR}" "$@" 
 }
 
 warn() { # make aur2ccr's warning messages prettier and more unified.
   debug "warn('$@')"
-  if [ "$1" == "-n" ]; then
+  if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
-  fi
-  if [ -n "$logfile" ]; then
-    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@" | tee -a "$logfile"
-  else
-    echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
-  fi
+  fi; ([[ -n "$logfile" ]] && echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${YELLOW}==>${ENDCOLOR}" "$@"
 }
 
 err() { # make aur2ccr's error messages prettier and more unified.
   debug "err('$@')"
-  if [ "$1" == "-n" ]; then
+  if [[ "$1" == "-n" ]]; then
     local eopts="$1"
     shift
-  fi
-  if [ -n "$logfile" ]; then
-    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" | tee -a "$logfile"
-  else
-    echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
-  fi
+  fi; ([[ -n "$logfile" ]] && echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" | tee -a "$logfile") || echo -e $eopts "${RED}==> ERROR:${ENDCOLOR}" "$@" >&2
 }
 
 # other functions
 clean() {  # clean up temp files
   debug "clean('$@')"
-  warn "Keyboard interrupt caught, cleaning up..."
-  debug "exiting..."
+  warn "Keyboard interrupt caught, cleaning up..."; debug "exiting..."
   exit 1
 }
 
 initarchr() {	# set up the arch repo vars, so we only need to sudo once
   debug "initarchr('$@')"
-  if (sudo pacman -Sy --config "$paconf"); then
+  if sudo pacman -Sy --config "$paconf"; then
     areplist=$(pacman --config "$paconf" -Ssq)
     afullist=$(pacman --config "$paconf" -Ss)
     archrinit=1
@@ -111,39 +89,26 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
 
 grepacfull() {  # grep the output of pacman -Ss in a useful manner
   debug "grepacfull('$@')"
-  if [ "$archrinit" == 0 ]; then 
-    initarchr
-  fi
-  local num=0
-  local ret=0
-  IFS=$'\n'
-  debug "entering 'for' loop..."
+  [[ "$archrinit" == 0 ]] && initarchr
+  local num=0; local ret=0; IFS=$'\n'; debug "entering 'for' loop..."
   for line in $afullist; do
-    debug -n ". "
-    if [ "$num" == 0 ]; then
+    if [[ "$num" == 0 ]]; then
       entry="${line}${newline}"
       num=1
-    elif [ "$num" == 1 ]; then
+    elif [[ "$num" == 1 ]]; then
       entry="${entry}${line}"
       num=0
-      if (echo "$entry" | grep -iq "$1"); then # this is slow [avg 45-50s total], we need a better way. would perl be faster?
-        echo "$entry"
-        local ret=1
-      fi
+      echo "$entry" | grep -iq "$1" && (echo "$entry"; export ret=1) # this is slow [avg 45-50s total], we need a better way. would perl be faster?
     fi
   done
   IFS=" "
-  if [ "$ret" == 0 ]; then
-    echo " (nothing found)"
-  fi
+  [[ "$ret" == 0 ]] && echo " (nothing found)"
 }
 
 isoutofdate() {  # stolen from the isoutofdate() and rpcinfo() functions in 'ccr'
   debug "isoutofdate('$@')"
   RPCURL="https://aur.archlinux.org/rpc.php?type"
-  if ! test -f "$tmpdir/$1.info"; then
-    curl -LfGs --data-urlencode "arg=$1" "$RPCURL=info" > "$tmpdir/$1.info"
-  fi
+  [[ -f "$tmpdir/$1.info" ]] || curl -LfGs --data-urlencode "arg=$1" "$RPCURL=info" > "$tmpdir/$1.info"
   [[ "$(jshon -Q -e results -e OutOfDate -u < "$tmpdir/$1.info")" = "1" ]]
 }
 
@@ -178,10 +143,7 @@ isinrepos() {  # check in main Chakra repos for package - stolen from 'ccr'
 
 isinaur() {
   debug "isinaur('$@')"
-  if !(echo "$1" | grep -q '^..'); then  # if the package name is not at least 2 chars, checking aur will fail.
-    err "Package names must be at least two characters in length"
-    exit 1
-  fi
+  echo "$1" | grep -q '^..' || (err "Package names must be at least two characters in length"; exit 1) || exit 1 # if the package name is not at least 2 chars, checking aur will fail.
   wget -q --spider "https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD"
 }
 
@@ -198,11 +160,9 @@ getarchname() {
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
-  debug "depends($@)"
-  debug "current dir: $(pwd; ls)"
-  . PKGBUILD
-  IFS=$'\n'
-  depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) )
+  debug "depends($@)"; debug "current dir: $(pwd; ls)"
+  . PKGBUILD; IFS=$'\n'
+  depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) ); IFS=' '
 }
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
@@ -227,7 +187,7 @@ uchksums() {  # update checksums with 'makepkg -gf'
   debug "current dir: $(pwd; ls)"
   (makepkg -gf > "$tmpdir/${PID}${UID}.sums" && export sums="$(cat "$tmpdir/${PID}${UID}.sums")") || (err "'makepkg -g' failed in '$(pwd)'!"; exit 1) || exit 1
   stype="$(echo $sums | grep -o "^..*sums=")"
-  if (echo "$sums" | grep -q "^$stype"); then
+  if echo "$sums" | grep -q "^$stype"; then
     if grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD; then # if all on one line
       sed -i "s/^$stype.*/$sums/" PKGBUILD || err "sed failed while updating checksums"
     elif grep -q "^$stype" PKGBUILD; then
@@ -465,8 +425,7 @@ aursearch() {  # this code is stolen from 'packer'. This used to be, and is the 
   debug "aursearch('$@')" >&2
   RPCURL="https://aur.archlinux.org/rpc.php?type"
   curl -LfGs --data-urlencode "arg=$1" "$RPCURL=search" | sed -e 's/","/"\n"/g' -e 's/\\//g' > "$tmpdir/$1$UID.search" 
-  parsefile="$tmpdir/$1$UID.search"
-  IFS=$'\n'
+  parsefile="$tmpdir/$1$UID.search" IFS=$'\n'
   aurname=( $(grep -F '"Name":"' "$parsefile" | cut -d '"' -f 4) )
   version=( $(grep -F '"Version":"' "$parsefile" | cut -d '"' -f 4) )
   description=( $(grep -F '"Description":"' "$parsefile" | sed -e 's/^"Description":"//' -e 's/"$/ /') )
@@ -478,9 +437,7 @@ aursearch() {  # this code is stolen from 'packer'. This used to be, and is the 
 
 pkgsearch() {  # there is no reason for this function to ever be called except right after isinarchr returns 1
   debug "pkgsearch('$@')"
-  warn "Package '$1' not found in AUR or Arch repos."
-  warn "Did you mean: "
-  debug "checking aursearch..."
+  warn "Package '$1' not found in AUR or Arch repos."; warn "Did you mean: "; debug "checking aursearch..."
   local aurpkgs="$(aursearch $1)"
   ([[ -n "$aurpkgs" ]] && (echo "$aurpkgs"; exit 1)) || (grepacfull $1; exit 1) || exit 1
 }
@@ -491,14 +448,8 @@ checkaur() {
     msg "'$1' found in AUR..."
     if isoutofdate $1; then
       warn "$1 is marked as out of date in AUR!"
-      warn -n "Are you sure you want to continue? [y/N] "
-      read ans
-      if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" -o "$ans" == "no" ]; then
-        warn "Skipping $1"
-        return 0
-      else
-        warn "Continuing. This is a bad idea!"; sleep 3
-      fi
+      warn -n "Are you sure you want to continue? [y/N] "; read ans
+      ([[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]] && (warn "Skipping $1"; exit 0)) || (warn "Continuing. This is a bad idea!"; sleep 3)
     fi
     makeccrpkg $1 || logerr $1
   elif isinarchr $1; then
@@ -630,12 +581,7 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 # main()
 debug "main('$@')"
 # prevent running the script as root
-if [[ $EUID == 0 ]]; then
-    err "This script must not be run as root!"
-    err "aur2ccr will ask for your password if needed."
-    err "Exiting..."; debug "script run as root, exiting"
-    exit 1
-fi
+([[ $EUID == 0 ]] && (err "This script must not be run as root!"; err "aur2ccr will ask for your password if needed."; err "Exiting..."; debug "script run as root, exiting"; exit 1) || exit 1
 # test for important programs that may not be installed 
 for bin in ${programs[@]}; do
   debug "checking for $bin..."
@@ -656,7 +602,7 @@ fi; if [[ -r "$lconfdir/$acconf" ]]; then
   debug "found local conf, using"
   . "$lconfdir/$acconf"
 fi # if none exist, just use default values
-mkdir -p "$tmpdir" # make the temp dir, if it does not already exist
+mkdir -p "$tmpdir" || (err "tmpdir '$tmpdir' is a file!"; exit 1) || exit 1 # make the temp dir, if it does not already exist
 # find other config files, and set variables to point to them- prefer global over local
 if [[ -r "$confdir/$apconf" ]]; then
   debug "found global pacman conf, using"
@@ -682,9 +628,7 @@ tmpdir="${tmpdir-/tmp}"                  namesconf="${namesconf-names.conf}"
 apconf="${apconf-archrepos.pacman.conf}" acconf="${acconf-aur2ccr.conf}" 
 startdir="${startdir-$(pwd)}"            findir="${findir-$(pwd)}" 
 consolidate="${consolidate-0}"           edit="${edit-0}" addad="${addad-0}" 
-if [ -z "$1" -o "$1" == "--help" -o "$1" == "-h" ]; then
-  usage
-fi
+[[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]] && usage
 popopts "$@"
 debug "setting trap"; trap clean INT  # trap keyboard interrupts (^C), in order to clean up temp files
 debug "entering 'for' loop"
@@ -694,29 +638,24 @@ for pkgname in $args; do
     msg "$pkgname is already in CCR or main Chakra repos."
     msg -n "Continue anyway? [y/N] "
     read ans
-    if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" -o "$ans" == "no" ]; then 
-      warn "Skipping $pkgname"
-      continue
+    if [[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]]; then 
+      warn "Skipping $pkgname"; continue
     else 
       checkaur $pkgname
     fi
   elif namelookup $pkgname; then
     msg "$apkgname is already in CCR or main Chakra repos as $cpkgname."
-    msg -n "Continue anyway? [y/N] "
-    read ans
+    msg -n "Continue anyway? [y/N] "; read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" -o "$ans" == "no" ]; then 
-      warn "Skipping $pkgname"
-      continue
+      warn "Skipping $pkgname"; continue
     else 
       checkaur $pkgname
     fi
   elif vcsver $pkgname; then
     msg "$pkgname is already in CCR or main Chakra repos as $vpkgname."
-    msg -n "Continue anyway? [y/N] "
-    read ans
-    if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" -o "$ans" == "no" ]; then 
-      warn "Skipping $pkgname"
-      continue
+    msg -n "Continue anyway? [y/N] "; read ans
+    if [[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]]; then 
+      warn "Skipping $pkgname"; continue
     else 
       checkaur $pkgname
     fi
@@ -724,13 +663,9 @@ for pkgname in $args; do
     checkaur $pkgname
   fi
 done
-if [[ -n "$url" ]]; then
-  makeccrpkg_u
-fi; if [[ -n "$file" ]]; then
-  makeccrpkg_f
-fi; if [[ -n "$pkgdir" ]]; then
-  makeccrpkg_d
-fi
+[[ -n "$url" ]] && makeccrpkg_u
+[[ -n "$file" ]] && makeccrpkg_f
+[[ -n "$pkgdir" ]] && makeccrpkg_d
 # finish up
 if [[ "$badpkgs" -gt 0 ]]; then
   err "$badpkgs package(s) failed"
@@ -743,7 +678,5 @@ else
   warn "will work. Please thoroughly test all packages BEFORE uploading them to CCR."
   warn "Broken packages may be removed without warning."
   exit 0
-fi; if [[ -n "$failedpkgs" ]]; then 
-  err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."
-  exit 1
 fi
+[[ -n "$failedpkgs" ]] && (err "The bad package(s) are:"; err "$failedpkgs"; debug "exiting..."; exit 1) || exit 1
