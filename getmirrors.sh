@@ -1,12 +1,9 @@
 #!/bin/bash
 # modified script, orginally from the Arch linux forum
 
-# determine the location of the user via a website
-$(wget --referer="http://www.google.com" --user-agent="Mozilla/5.0 (Windows; U;Windows NT 5.1; en-US; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6" --header="Accept:text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5" --header="Accept-Language: en-us,en;q=0.5"  --header="Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7" --header="Keep-Alive: 300" "$@" -O lang http://www.ip-adress.com/ >/dev/null 2>&1
-)
-coun=$(echo $(sed -n 's/flag/&/p' <lang) |  sed 's/.\+flag"> //;s/ <br.\+//;')
+# determine the location of the user via a duckduckgo
+coun="$(wget -qO - "https://duckduckgo.com/lite/?q=ip" | grep "(your IP\ address)" | sed 's/.*(your IP address) in: .*, \(.*\s*.*\)\..*/\1/')"
 echo "detected country: " $coun
-rm lang
 
 country="${country-$coun}" 
 apconf="${apconf-./archrepos.pacman.conf}"
