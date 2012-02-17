@@ -13,6 +13,6 @@ wget -qO- "$url" | sed 's/^#Server/Server/g' > "$tmpfile"
 
 # some sed magic: get all lines containing "server", drop all but the first
 # x86-64 works for all repos, i686 won't work with multilib
-server=$(sed -n '/Server/p; s/Server = //' $tmpfile | head -1 | sed 's/$arch/x86-64/g')
+server=$(sed -n 's/^Server = //p' $tmpfile | head -1 | sed 's/$arch/x86-64/g')
 
 sed -i 's|= [^ ]*|= '"$server"'|g' ./archrepos.pacman.conf 
