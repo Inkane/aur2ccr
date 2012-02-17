@@ -7,7 +7,8 @@ others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
-	sh -c "arch=$(echo $MACHTYPE|grep -o '^\w*') getmirrors.sh"
+	sh getmirrors.sh
+	@echo "run 'aur2ccr -s' to choose the closest server to your location"
 
 man: aur2ccr.8.gz $(others)
 
