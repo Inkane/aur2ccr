@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 # modified script, orginally from the Arch linux forum
 
-arch="x86_64"
+arch="${arch-x86_64}"
 
-country='Germany' # replace this with your country
+country="${country-Germany}" # replace this with your country
 url="http://www.archlinux.org/mirrorlist/?country=$country&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
 tmpfile=$(mktemp --suffix=-mirrorlist)
@@ -16,4 +16,3 @@ wget -qO- "$url" | sed 's/^#Server/Server/g' > "$tmpfile"
 server=$(sed -n '/Server/p' $tmpfile | head -1 | sed 's/$arch/x86-64/g')
 
 sed -i 's|= [^ ]*|= '"$server"'|g' ./archrepos.pacman.conf 
-
