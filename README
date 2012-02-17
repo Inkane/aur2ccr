@@ -4,6 +4,7 @@ packages that are ready for uploading to CCR.
 
 Todo: 
 improve popopts function, to allow options to be used like '-ce';
+add ability to split split PKGBUILDs;
 add optipkg() function to fix some easy errors in PKGBUILDs;
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
