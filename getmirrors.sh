@@ -1,7 +1,6 @@
 #!/bin/bash
 # modified script, orginally from the Arch linux forum
 
-arch="${arch-$(echo $MACHTYPE|grep -o '^\w*')}" # why is this here?
 country="${country-Germany}" # replace this with your country
 url="http://www.archlinux.org/mirrorlist/?country=$country&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 tmpfile=$(mktemp --suffix=-mirrorlist)
