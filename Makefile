@@ -7,7 +7,7 @@ others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
-	sh -c "country= arch=$(echo $MACHTYPE|grep -o '^\w*') getmirrors.sh"
+	sh -c "arch=$(echo $MACHTYPE|grep -o '^\w*') getmirrors.sh"
 
 man: aur2ccr.8.gz $(others)
 
