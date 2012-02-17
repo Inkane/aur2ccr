@@ -1,12 +1,14 @@
 # Makefile for aur2ccr
 manpages = aur2ccr.8.gz
-binfiles = aur2ccr
+binfiles = aur2ccr getmirrors.sh
 unstable = aur2ccr-unstable
 configs = names.conf aur2ccr.conf archrepos.pacman.conf
 others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
+	sh getmirrors.sh
+	@echo "run 'aur2ccr -s' to choose the closest server to your location"
 
 man: aur2ccr.8.gz $(others)
 
