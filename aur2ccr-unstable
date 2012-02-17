@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.6.5
+# aur2ccr - version 0.6.6
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -16,7 +16,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.6.5"
+pname="aur2ccr"         pver="0.6.6"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -500,8 +500,10 @@ checkaur() {
 
 setup() {  # perform some setup-related stuff interactively
   msg "In order to choose the best mirror, we need to know where you are."
-  msg -n "Please enter your country (eg, United States): "
+  d_country="$(quiet=1 getmirrors.sh)" d_country="${d_country-Any}"
+  msg -n "Please enter your country (leave blank to use '$d_country'): "
   read u_country
+  [[ "$u_country" == "" ]] && u_country="$d_country"
   msg "Generating pacman configuration for $paconf..."
   (sudo country="$u_country" apconf="$paconf" getmirrors.sh && msg "Done") || (err "Sorry, something went wrong."; err "Try again with a different country, or make sure you are connected to the internet.")
   exit 0
