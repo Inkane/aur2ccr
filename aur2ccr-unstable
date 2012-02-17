@@ -30,7 +30,7 @@ newline=$'\n'
 RED='\e[1;31m'          YELLOW='\e[1;33m'
 BLUE='\e[1;34m'         PINK='\e[1;35m'
 WHITE='\e[1;37m'        ENDCOLOR='\e[0m'        
-programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch pacman )
+programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch pacman getmirrors.sh )
 
 # output formatting functions
 debug() { # echo things when called like 'debug doing stuff...' only when debug=1
@@ -498,6 +498,15 @@ checkaur() {
   fi
 }
 
+setup() {  # perform some setup-related stuff interactively
+  msg "In order to choose the best mirror, we need to know where you are."
+  msg -n "Please enter your country (eg, United States): "
+  read u_country
+  msg "Generating pacman configuration for $paconf..."
+  (sudo country="$u_country" apconf="$paconf" getmirrors.sh && msg "Done") || (err "Sorry, something went wrong."; err "Try again with a different country, or make sure you are connected to the internet.")
+  exit 0
+}
+
 usage() {
   debug "usage('$@')"
   echo "Usage: $(basename $0) [OPTIONS] [PACKAGES]" # is this better than $0?
@@ -521,6 +530,7 @@ usage() {
   echo "  -l <logfile>		use 'tee' to send all aur2ccr messages to <logfile>"
   echo
   echo "Other: "
+  echo "  -s			perform setup-related tasks, such as choosing the best Arch mirror"
   echo "  -a			add an aur2ccr advertisement - add as Contributer: "
   echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -h			display this help and exit"
@@ -595,6 +605,8 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       islfile=1
     elif [ -n "$arg" -a "$arg" == "-i" ]; then
       install=1
+    elif [ -n "$arg" -a "$arg" == "-s" ]; then
+      setup
     elif [ -n "$arg" -a "$arg" == "-h" ]; then
       usage
     elif [ -n "$arg" -a "$arg" == "-v" ]; then
