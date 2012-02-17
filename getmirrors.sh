@@ -1,7 +1,11 @@
 #!/bin/bash
 # modified script, orginally from the Arch linux forum
 
-country="${country-Germany}" # replace this with your country
+# determine the location of the user via a duckduckgo
+coun="$(wget -qO - "https://duckduckgo.com/lite/?q=ip" | grep "(your IP\ address)" | sed 's/.*(your IP address) in: .*, \(.*\s*.*\)\..*/\1/')"
+echo "detected country: $coun"
+
+country="${country-$coun}" 
 apconf="${apconf-./archrepos.pacman.conf}"
 url="http://www.archlinux.org/mirrorlist/?country=$country&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 tmpfile=$(mktemp --suffix=-mirrorlist)
