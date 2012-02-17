@@ -338,11 +338,15 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down to a sl
     if [[ -z "$needeps" ]]; then
       msg "Oops, looks like you already have all these dependencies installed."
       makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
-    elif (ccr -S $needeps); then
+    elif ccr -S $needeps; then
       msg "Succeeded, continuing"
       makepkg -sfr || (err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"; logerr $pkgname; exit 1) || return 1
-      msg "Removing packages..."
-      (sudo pacman -Rn $needeps && msg "Packages removed") || err "could not remove packages!"
+      if [[ "$install" -eq 0 ]]; then
+        msg "Removing packages..."
+        (sudo pacman -Rn $needeps && msg "Packages removed") || err "could not remove packages!"
+      else
+        depsnotinrep=0
+      fi
     else
       warn "Package '$pkgname' has dependencies outside of the Chakra repos and CCR."; warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."; warn "Please test the final .src.tar.gz package manually with ccr."
     fi
@@ -352,13 +356,16 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down to a sl
     if [[ "$consolidate" -eq 1 ]]; then
       pkgpkg="$(ls $pkgname*.src.tar.gz)"
       (mv $pkgpkg "$findir" && msg "$pkgpkg moved to $findir") || (err "$pkgpkg could not be moved to $findir"; logerr $pkgname; exit 1) || return 1
-    fi; if [[ "$install" -eq 1 ]]; then
+    fi
+    if [[ "$install" -eq 1 && "$depsnotinrep" == 0 ]]; then
       msg "Installing $pkgname..."
       if ! sudo pacman -U $(ls *.pkg.tar.xz); then
         warn "pacman failed, trying 'makepkg -i'..."
         makepkg -if || (err "Could not install $pkgname."; exit 1) || return 1
       fi
       (isinstalled $pkgname && msg "$pkgname installed") || (err "Could not install $pkgname."; exit 1) || return 1
+    elif [[ "$install" -eq 1 ]]; then
+        warn "$pkgname cannot be installed, because it is missing dependencies."
     fi
   else
     err "Some error occurred, check the $pkgname PKGBUILD in '$(pwd)'"
