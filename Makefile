@@ -8,7 +8,7 @@ allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
 	sh getmirrors.sh
-	@echo "run 'aur2ccr -s' to choose the closest server to your location"
+	@echo "run 'aur2ccr -s' if the above location is missing or incorrect"
 
 man: aur2ccr.8.gz $(others)
 
@@ -17,6 +17,9 @@ install: $(allfiles) install-man
 	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
 	install -D -m755 $(binfiles) "$(DESTDIR)/usr/bin/"
 	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
+
+uninstall: # not ready for use
+	rm -rf "$(DESTDIR)/etc/aur2ccr"
 
 install-unstable: $(allfiles) install-man # this will install the aur2ccr-unstable script, use with caution
 	install -d -m755 "$(DESTDIR)/usr/bin"
