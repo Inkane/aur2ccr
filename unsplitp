@@ -1,0 +1,28 @@
+#!/bin/bash
+# unsplitp
+# Take one split PKGBUILD and create multiple normal PKGBUILDs
+# Usage: unsplitp path/to/split/PKGBUILD
+
+isplitp() {  # is $1 a split PKGBUILD?
+  grep -q "^pkgbase=" "$1" && grep -q "package_.*()" "$1" && grep -q "build()" "$1"
+}
+
+unsplitp() {  # take one split PKGBUILD and create multiple normal PKGBUILDs
+  unstartd="$(pwd)"
+  cp PKGBUILD PKGBUILD$BASHPID.orig
+  . PKGBUILD # get the PKGBUILD's vars into our mem
+  for pkg in ${pkgname[@]}; do # seperate PKGBUILDs
+    [[ "$pkg" == "$pkgbase" ]] && continue # skip pkgbase
+    mkdir -p "../$pkg" && cd "../$pkg" || return 1
+    cp -f "$unstartd/PKGBUILD" ./ || return 1
+    sed -i "/^pkgbase=.*/d; /^package_$pkg()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkg/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d" PKGBUILD || return 1
+  done; cd "$unstartd"
+  sed -i "/^pkgbase=.*/d; /^package_$pkgbase()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkgbase/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d" PKGBUILD || return 1 # fix pkgbase PKGBUILD
+  grep -q "^package()" PKGBUILD || sed -i "/^build()/s//package()/" PKGBUILD || return 1 # if no package(), rename build() to package()
+}
+
+#main() {
+[[ -z "$1" ]] && [[ -r PKGBUILD ]] && isplitp PKGBUILD && unsplitp && exit 0
+[[ -r "$1" ]] && isplitp "$1" && (cd "$(dirname "$1")"; unsplitp && exit 0) && exit 0
+echo "ERROR: Split PKGBUILD not found or unsplitting failed"; exit 1
+#}
