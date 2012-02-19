@@ -569,7 +569,7 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
               if [[ "$1" != "" ]]; then
                 maintainer="$1";
               else
-                exit 42;
+                err "missing maintainer" && exit 2;
               fi;;
 	"-e"|"--edit") edit=1;;
 	"-c") consolidate=1;;
@@ -577,33 +577,28 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 	      if [[ "$1" != "" ]]; then
 	        file="$1";
 	      else
-	        exit 42;
+	        err "missing source file" && exit 3;
 	      fi;;
 	"-u"|"--from-url") shift
               if [[ "$1" != "" ]]; then
                 url="$1";
               else
-                exit 42;
+                err "missing url" && exit 4;
 	      fi;;
 	"-d"|"--from-dir") shift
 	      if [[ "$1" != "" ]]; then
                 pkgdir="$1"
               else
-                exit 42;
+                err "missing directory" && exit 5;
               fi;;
 	"-C") shift
 	      if [[ "$1" != "" ]]; then
 	        startdir="$1"
 	        finddir="$1"
 	      else
-	        exit 42;
+	        err "missing directory" && exit 6;
 	      fi;;
-	"-t") shift
-	      if [[ "$1" != "" ]]; then
-	        startdir="$tmpdir"
-	      else
-	        exit 42;
-	      fi;
+	"-t") startdir="$tmpdir"
 	      consolidate=1;;
 	"-l"|"--log") shift
 	      if [[ "$1" != "" ]]; then
@@ -611,13 +606,13 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 	      touch "$logfile" >&2> /dev/null
 	      if ! test -w "$logfile"; then
 	        err "specified log file '$logfile is not writable'"
-	        exit 1
+	        exit 8
 	      fi;
 	      echo >> "$logfile"
 	      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
 	      echo >> "$logfile"
 	      else
-	        exit 42
+	        exit 9
 	      fi;;
 	"-i"|"--install") install=1;;
 	"-s"|"--setup") setup;;
