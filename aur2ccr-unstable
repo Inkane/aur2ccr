@@ -602,17 +602,17 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 	      consolidate=1;;
 	"-l"|"--log") shift
 	      if [[ "$1" != "" ]]; then
-	      logfile="$1"
-	      touch "$logfile" >&2> /dev/null
-	      if ! test -w "$logfile"; then
-	        err "specified log file '$logfile is not writable'"
-	        exit 8
-	      fi;
-	      echo >> "$logfile"
-	      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
-	      echo >> "$logfile"
+	        logfile="$1"
+	        touch "$logfile" >&2> /dev/null
+	        if ! test -w "$logfile"; then
+	          err "specified log file '$logfile is not writable'"
+	          exit 8
+	        fi;
+	        echo >> "$logfile"
+	        echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+	        echo >> "$logfile"
 	      else
-	        exit 9
+	        err "missing logfile" && exit 8
 	      fi;;
 	"-i"|"--install") install=1;;
 	"-s"|"--setup") setup;;
