@@ -96,9 +96,11 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
 
 grepacfull() {  # grep the output of pacman -Ss in a useful manner
   debug "grepacfull('$@')"
+  debug $1
   [[ "$archrinit" == 0 ]] && initarchr
   local num=0; local ret=0; IFS=$'\n'; debug "entering 'for' loop..."
   for line in $afullist; do
+    debug $line
     if [[ "$num" == 0 ]]; then
       entry="${line}${newline}"
       num=1
@@ -560,83 +562,78 @@ usage() {
 
 popopts() {  # populate variables, enumerate options and arguments -- crappy - if you have a better way, *please* tell me
   debug "popopts('$@')"
-  for arg in "$@"; do 
-    if [ -n "$isfile" -a "$isfile" == 1 ]; then
-      file="$arg"
-      isfile=0
-      continue
-    elif [ -n "$isurl" -a "$isurl" == 1 ]; then 
-      url="$arg"
-      isurl=0
-      continue
-    elif [ -n "$isdir" -a "$isdir" == 1 ]; then 
-      pkgdir="$arg"
-      isdir=0
-      continue
-    elif [ -n "$iscdir" -a "$iscdir" == 1 ]; then 
-      startdir="$arg"
-      findir="$arg"
-      iscdir=0
-      continue
-    elif [ -n "$islfile" -a "$islfile" == 1 ]; then 
-      logfile="$arg"
-      touch "$logfile" >&2> /dev/null
-      if ! test -w "$logfile"; then
-        err "specified log file '$logfile' is not writable"
-        exit 1
-      fi
-      echo >> "$logfile"
-      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
-      echo >> "$logfile"
-      islfile=0
-      continue
-    elif [ -n "$ismaint" -a "$ismaint" == 1 ]; then
-      maintainer="$arg"
-      ismaint=0
-      continue
-    fi
-    if [ -n "$arg" -a "$arg" == "-m" ]; then
-      ismaint=1
-    elif [ -n "$arg" -a "$arg" == "-e" ]; then
-      edit=1
-    elif [ -n "$arg" -a "$arg" == "-c" ]; then
-      consolidate=1
-    elif [ -n "$arg" -a "$arg" == "-f" ]; then
-      isfile=1
-    elif [ -n "$arg" -a "$arg" == "-u" ]; then
-      isurl=1
-    elif [ -n "$arg" -a "$arg" == "-d" ]; then
-      isdir=1
-    elif [ -n "$arg" -a "$arg" == "-C" ]; then
-      iscdir=1
-    elif [ -n "$arg" -a "$arg" == "-t" ]; then
-      usetdir=1
-      consolidate=1
-    elif [ -n "$arg" -a "$arg" == "-l" ]; then
-      islfile=1
-    elif [ -n "$arg" -a "$arg" == "-i" ]; then
-      install=1
-    elif [ -n "$arg" -a "$arg" == "-s" ]; then
-      setup
-    elif [ -n "$arg" -a "$arg" == "-h" ]; then
-      usage
-    elif [ -n "$arg" -a "$arg" == "-v" ]; then
-      echo "$pname $pver"
-      exit 0
-    elif [ -n "$arg" -a "$arg" == "-a" ]; then
-      addad=1
-    else
-      args="$args $arg"
-    fi
-  done
-  if [ -n "$usetdir" -a "$usetdir" == 1 ]; then
-    startdir="$tmpdir"
-  fi
-  if [ -z "$args" -a -z "$url" -a -z "$file" -a -z "$pkgdir" ]; then 
+  while [[ "$1" != "" ]]
+  do
+    case "$1" in
+        "-m"|"--maintainer") shift
+              if [[ "$1" != "" ]]; then
+                maintainer="$1";
+              else
+                exit 42;
+              fi;;
+	"-e"|"--edit") edit=1;;
+	"-c") consolidate=1;;
+	"-f"|"--from-source") shift
+	      if [[ "$1" != "" ]]; then
+	        file="$1";
+	      else
+	        exit 42;
+	      fi;;
+	"-u"|"--from-url") shift
+              if [[ "$1" != "" ]]; then
+                url="$1";
+              else
+                exit 42;
+	      fi;;
+	"-d"|"--from-dir") shift
+	      if [[ "$1" != "" ]]; then
+                pkgdir="$1"
+              else
+                exit 42;
+              fi;;
+	"-C") shift
+	      if [[ "$1" != "" ]]; then
+	        startdir="$1"
+	        finddir="$1"
+	      else
+	        exit 42;
+	      fi;;
+	"-t") shift
+	      if [[ "$1" != "" ]]; then
+	        startdir="$tmpdir"
+	      else
+	        exit 42;
+	      fi;
+	      consolidate=1;;
+	"-l"|"--log") shift
+	      if [[ "$1" != "" ]]; then
+	      logfile="$1"
+	      touch "$logfile" >&2> /dev/null
+	      if ! test -w "$logfile"; then
+	        err "specified log file '$logfile is not writable'"
+	        exit 1
+	      fi;
+	      echo >> "$logfile"
+	      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+	      echo >> "$logfile"
+	      else
+	        exit 42
+	      fi;;
+	"-i"|"--install") install=1;;
+	"-s"|"--setup") setup;;
+	"-h"|"--help") usage;;
+	"-v"|"--version") echo "$pname $pver"
+	    exit 0;;
+	"-a"|"--add") addad=1;;
+	*) args="$args $1";;
+    esac;
+    shift;
+done;
+if [ -z "$args" -a -z "$url" -a -z "$file" -a -z "$pkgdir" ]; then
     err "You did not specify any packages to build"
     err "There is nothing to do. Exiting..."
     exit 1
-  fi
+fi
 }
 
 # main()
