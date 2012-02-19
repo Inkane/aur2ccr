@@ -4,12 +4,12 @@ packages that are ready for uploading to CCR.
 
 Todo: 
 improve popopts function, to allow options to be used like '-ce';
-add ability to split split PKGBUILDs;
-add optipkg() function to fix some easy errors in PKGBUILDs;
+add ability to unsplit split PKGBUILDs (almost done);
+add optipkg() function to fix some easy PKGBUILD issues (almost done);
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
 speed up the pacman-output-grepping function (with perl?);
-more code cleanup;
+perpetual code cleanup;
 find and fix bugs!
 
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur

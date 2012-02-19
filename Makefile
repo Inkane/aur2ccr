@@ -1,4 +1,4 @@
-# Makefile for aur2ccr
+# Makefile for aur2ccr and aur2ccr-unstable
 manpages = aur2ccr.8.gz
 binfiles = aur2ccr getmirrors.sh
 unstable = aur2ccr-unstable
@@ -8,7 +8,7 @@ allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
 	sh getmirrors.sh
-	@echo "run 'aur2ccr -s' if the above location is missing or incorrect"
+	@echo "run 'aur2ccr -s' if the above location is incorrect"
 
 man: aur2ccr.8.gz $(others)
 

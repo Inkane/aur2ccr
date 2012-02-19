@@ -15,9 +15,9 @@ unsplitp() {  # take one split PKGBUILD and create multiple normal PKGBUILDs
     [[ "$pkg" == "$pkgbase" ]] && continue # skip pkgbase
     mkdir -p "../$pkg" && cd "../$pkg" || return 1
     cp -f "$unstartd/PKGBUILD" ./ || return 1
-    sed -i "/^pkgbase=.*/d; /^package_$pkg()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkg/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d" PKGBUILD || return 1
+    sed -i "/^pkgbase=.*/d; /^package_$pkg()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkg/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d; s/\(.*\)\$pkgbase\(.*\)/\1$pkgbase\2/; s/\(.*\)\$pkgname\([^\[].*\)/\1$pkgname\2/; s/\(.*\)\$pkgname\[\(\d\d*\)\]\(.*\)/\1${pkgname[\2]}\3/; s/\([^=]\)$pkg/\1\${pkgname}/g" PKGBUILD || return 1
   done; cd "$unstartd"
-  sed -i "/^pkgbase=.*/d; /^package_$pkgbase()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkgbase/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d" PKGBUILD || return 1 # fix pkgbase PKGBUILD
+  sed -i "/^pkgbase=.*/d; /^package_$pkgbase()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkgbase/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d; s/\(.*\)\$pkgbase\(.*\)/\1$pkgbase\2/; s/\(.*\)\$pkgname\([^\[].*\)/\1$pkgname\2/; s/\(.*\)\$pkgname\[\(\d\d*\)\]\(.*\)/\1${pkgname[\2]}\3/; s/\([^=]\)$pkgbase/\1\${pkgname}/g" PKGBUILD || return 1 # fix pkgbase PKGBUILD
   grep -q "^package()" PKGBUILD || sed -i "/^build()/s//package()/" PKGBUILD || return 1 # if no package(), rename build() to package()
 }
 
