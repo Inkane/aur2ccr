@@ -21,11 +21,9 @@ install: $(allfiles) install-man
 uninstall: # not ready for use
 	rm -rf "$(DESTDIR)/etc/aur2ccr"
 
-install-unstable: $(allfiles) install-man # this will install the aur2ccr-unstable script, use with caution
+install-unstable: $(allfiles) # this will install the aur2ccr-unstable script, use with caution - assumes 'make install' already done.
 	install -d -m755 "$(DESTDIR)/usr/bin"
-	install -d -m755 "$(DESTDIR)/etc/aur2ccr"
 	install -D -m755 $(unstable) "$(DESTDIR)/usr/bin/"
-	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
 
 install-man: # 'make install' calls this, so only do 'make install-man' if all you want is the man page.
 	install -d -m755 "$(DESTDIR)/usr/man/man8"
