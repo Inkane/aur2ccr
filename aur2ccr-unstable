@@ -576,32 +576,29 @@ usage() {
   echo "Example: $(basename $0) twisted"
   echo 
   echo "General: "
-  echo "  -m <maintainer>	add maintainer information to each PKGBUILD before building"
-  echo "                	<maintainer> should be in the form 'My Name (nick) <me@example.com>'"
-  echo "  -e			edit the PKGBUILD for each package with \$EDITOR before building"
-  echo "  -c			move all CCR source packages into the working directory"
-  echo "  -i			install packages that build successfully, in order to test them"
+  echo "  -m <maintainer>	  add maintainer information to each PKGBUILD before building"
+  echo "  (--maintainer <m...>)   <maintainer> should be in the form 'My Name (nick) <me@example.com>'"
+  echo "  -e, --edit		  edit the PKGBUILD for each package with \$EDITOR before building"
+  echo "  -c, --consolidate	  move all CCR source packages into the working directory"
+  echo "  -i, --install		  install packages that build successfully, in order to test them"
   echo
   echo "Advanced: "
-  echo "  -f <file>		create a CCR source package from source package <file>"
-  echo "  -u <URL>		... or from an AUR/CCR-compatible source package at <URL>"
-  echo "  -d <dir>		... or from a PKGBUILD and (optional) other files in <dir>"
-  echo "  -C <newdir>		use <newdir> as the working directory instead of the current dir"
-  echo "  -t			use '$tmpdir' as the build directory instead of the current dir"
-  echo "   			(all finished src packages will be moved into the working dir, like -c)"
-  echo "  -l <logfile>		use 'tee' to send all aur2ccr messages to <logfile>"
+  echo "  -f, --from-src <file>   create a CCR source package from source package <file>"
+  echo "  -u, --from-url <URL>	  ... or from an AUR/CCR-compatible source package at <URL>"
+  echo "  -d, --from-dir <dir>	  ... or from a PKGBUILD and (optional) other files in <dir>"
+  echo "  -C, --cd <newdir>	  use <newdir> as the working directory instead of the current dir"
+  echo "  -t, --temp		  use '$tmpdir' as the build directory instead of the current dir"
+  echo "        		  (all finished src packages will be moved into the working dir, like -c)"
+  echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>"
   echo
   echo "Other: "
-  echo "  -s			perform setup-related tasks, such as choosing the best Arch mirror"
-  echo "  -a			add an aur2ccr advertisement - add as Contributer: "
-  echo "        		'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
-  echo "  -h			display this help and exit"
-  echo "  -v			print version information and exit"
+  echo "  -s, --setup		  perform setup-related tasks, such as choosing the best Arch mirror"
+  echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributer: "
+  echo "        		  'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
+  echo "  -h, --help		  display this help and exit"
+  echo "  -v, --version		  print version information and exit"
   echo 
   echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]"
-  echo 
-  echo "Note: Options must be specified separately, like '-c -e', not '-ce'."
-  echo "This will (hopefully) be fixed in a future version."
   echo 
   echo "Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>"
   echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>"
@@ -609,10 +606,9 @@ usage() {
   exit 0
 }
 
-popopts() {  # populate variables, enumerate options and arguments -- crappy - if you have a better way, *please* tell me
+popopts() {  # populate variables, enumerate options and arguments
   debug "popopts('$@')"
-  while [[ "$1" != "" ]];
-  do
+  while [[ "$1" != "" ]];  do
     debug "current option $1"
     case "$1" in
         "-m"|"--maintainer") shift
@@ -622,8 +618,8 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
                 err "missing maintainer" && exit 2;
               fi;;
 	"-e"|"--edit") edit=1;;
-	"-c") consolidate=1;;
-	"-f"|"--from-source") shift
+	"-c"|"--consolidate") consolidate=1;;
+	"-f"|"--from-src") shift
 	      if [[ "$1" != "" ]]; then
 	        file="$1";
 	      else
@@ -641,14 +637,14 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
               else
                 err "missing directory" && exit 5;
               fi;;
-	"-C") shift
+	"-C"|"--cd") shift
 	      if [[ "$1" != "" ]]; then
 	        startdir="$1"
 	        finddir="$1"
 	      else
 	        err "missing directory" && exit 6;
 	      fi;;
-	"-t") startdir="$tmpdir"
+	"-t"|"--temp") startdir="$tmpdir"
 	      consolidate=1;;
 	"-l"|"--log") shift
 	      if [[ "$1" != "" ]]; then
@@ -668,17 +664,15 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 	"-s"|"--setup") setup;;
 	"-h"|"--help") usage;;
 	"-v"|"--version") echo "$pname $pver" && exit 0;;
-	"-a"|"--add") addad=1;;
-	# match every other option starting with -, followed by two or more
-	# chars
+	"-a"|"--addad") addad=1;;
+	# match every other option starting with -, followed by two or more chars
         -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
                       # split the option string, add a - before every option
 		      set -- $(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift) "${@:2}"
 		      debug "new options" "$@"
 		      continue
 		;;
-	# package names won't start with - or --, so we can catch invalid
-	# optiones
+	# package names won't start with - or --, so we can catch invalid options
 	-[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
 	*) args="$args $1";;
     esac;
