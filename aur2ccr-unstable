@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.6.6
+# aur2ccr - version 0.6.8
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -174,7 +174,7 @@ getarchname() {
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
   # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
-  local pkgname=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install= 
+  local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install= 
   debug "depends($@)"; debug "current dir: $(pwd; ls)"
   . PKGBUILD; IFS=$'\n'
   depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) ); IFS=' '
@@ -236,6 +236,29 @@ optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors, et
   grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
 }
 
+isplitp() {  # is $1 a split PKGBUILD?
+  debug "isplitp('$@')"
+  grep -q "package_.*()" "$1" && grep -q "build()" "$1" || return 1 #grep -q "^pkgbase=" "$1" &&  
+}
+
+unsplitp() {  # take one split PKGBUILD and create multiple normal PKGBUILDs
+  debug "unsplitp('$@')"
+  local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install= 
+  unstartd="$(pwd)"
+  cp PKGBUILD PKGBUILD$BASHPID.orig
+  . PKGBUILD # get the PKGBUILD's vars into our mem
+  [[ -z "$pkgbase" ]] && pkgbase=$pkgname
+  for pkg in ${pkgname[@]}; do # seperate PKGBUILDs
+    [[ "$pkg" == "$pkgbase" ]] && continue # skip pkgbase
+    mkdir -p "../../$pkg/$pkg" && cd "../../$pkg/$pkg" || return 1
+    cp -f "$unstartd/PKGBUILD" ./ || return 1
+    sed -i "/^pkgbase=.*/d; /^package_$pkg()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkg/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d; s/\(.*\)\$pkgbase\(.*\)/\1$pkgbase\2/; s/\(.*\)\$pkgname\([^\[].*\)/\1$pkgname\2/; s/\(.*\)\$pkgname\[\(\d\d*\)\]\(.*\)/\1${pkgname[\2]}\3/; s/\([^=]\)$pkg/\1\${pkgname}/g" PKGBUILD || return 1
+  done; cd "$unstartd"
+  sed -i "/^pkgbase=.*/d; /^package_$pkgbase()/s//package()/; /^true && pkgname=.*/d; /^pkgname=.*/s//pkgname=$pkgbase/; /true && depends=()/d; /^package_.*()/,/^}\s*$/d; s/\(.*\)\$pkgbase\(.*\)/\1$pkgbase\2/; s/\(.*\)\$pkgname\([^\[].*\)/\1$pkgname\2/; s/\(.*\)\$pkgname\[\(\d\d*\)\]\(.*\)/\1${pkgname[\2]}\3/; s/\([^=]\)$pkgbase/\1\${pkgname}/g" PKGBUILD || return 1 # fix pkgbase PKGBUILD
+  grep -q "^package()" PKGBUILD || sed -i "/^build()/s//package()/" PKGBUILD || return 1 # if no package(), rename build() to package()
+  __PKGNAMES=( ${pkgname[@]} ) __PKGBASE="$pkgbase"
+}
+
 isinstalled() { # check if $1 is already installed
   debug "isinstalled('$@')"
   pacman -Qq -- "$1" &>/dev/null
@@ -286,12 +309,12 @@ namechange() {  # companion function to namelookup()
 
 dotherest() {  # this used to be 150 lines, but I managed to get it down a little bit - it's still too large.
   debug "dotherest('$@')"
-  local pkgname=$1
+  local pkgname=$1; debug "pkgname=$pkgname"
   depsnotinrep=0
-  #msg "Checking if this is a split PKGBUILD..."
-  #isplitp PKGBUILD && makeccrpkg_s; return 0
-  #msg "This doesn't appear to be a split PKGBUILD, continuing..."; msg -n "Checking for and fixing common PKGBUILD problems... "
-  #optipkg; echo "done."
+  msg "Checking if this is a split PKGBUILD..."
+  isplitp PKGBUILD && (makeccrpkg_s $pkgname && exit 0) && return 0
+  msg "This doesn't appear to be a split PKGBUILD, continuing..."; msg -n "Checking for and fixing common PKGBUILD problems... "
+  optipkg; echo "done."
   [[ -n "$maintainer" ]] && (msg "Changing maintainer information..."; debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."; (addmaintainer "$maintainer" && msg "Done" || err "Failed"))
   debug "if \$addad then addad..."
   [[ "$addad" == 1 ]] && addad
@@ -467,7 +490,33 @@ makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to
 }
 
 makeccrpkg_s() {  # handle split PKGBUILDs
-  echo -n #dummy
+  debug "makeccrpkg_s('$@')"
+  local pkgname=$1
+  warn "'$pkgname' seems to be a split PKGBUILD, which cannot be uploaded to CCR."
+  warn "For more information on split PKGBUILDs, see PKGBUILD(5) or"
+  warn "http://www.archlinux.org/pacman/PKGBUILD.5.html#_package_splitting"
+  warn "aur2ccr can attempt to rectify this by dividing the PKGBUILD up into multiple"
+  warn "packages, but this is an experimantal feature and does not always work. If"
+  warn "you do not want this script to attempt to 'unsplit' this package, you will"
+  warn "need to do it manually."
+  warn "If aur2ccr does try to fix the PKGBUILD, the original will be backed up as"
+  warn "PKGBUILD.orig in the package's build dir. "
+  warn -n "Should aur2ccr attempt to fix this PKGBUILD? [y/N] "
+  read ans
+  if [[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]]; then
+    warn "aur2ccr will not attempt to fix this PKGBUILD. You need to fix it"
+    warn "manually before uploading the package to CCR."
+    return 0
+  else
+    warn "Attempting to fix the PKGBUILD..."
+    unsplitp PKGBUILD
+    warn "Done. There is no way to see if this worked without testing the packages."
+    for pkg in ${__PKGNAMES[@]}; do
+      [[ "$pkg" == "$__PKGBASE" ]] && continue
+      dotherest $pkg || (logerr $pkg; exit 1) || return 1
+    done
+    [[ -n "$__PKGBASE" ]] && dotherest $__PKGBASE || (logerr $__PKGBASE; exit 1) || return 1
+  fi
 }
 
 aursearch() {  # this code is stolen from 'packer'. This used to be, and is the equivalent of: packer --auronly -Ss $1 
