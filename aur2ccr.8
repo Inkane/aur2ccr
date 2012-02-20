@@ -7,7 +7,7 @@
 .\"    Source: aur2ccr
 .\"  Language: English
 .\"
-.TH "aur2ccr" "8" "02/06/2012" "aur2ccr" "aur2ccr Manual"
+.TH "aur2ccr" "8" "02/20/2012" "aur2ccr" "aur2ccr Manual"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -46,6 +46,12 @@ Consolidate all *.src.tar.gz packages built by the script into the working direc
 .RE
 
 .PP
+\fB\-i\fR
+.RS 4
+Install all packages build by the script, in order to test them beofre uploading to CCR\&.
+.RE
+
+.PP
 \fB\-f\fR <\'AUR/CCR-compat source package filename\'>
 .RS 4
 Specify a local package to build from\&.
@@ -79,6 +85,12 @@ Build packages in $tmpdir (/tmp/aur2ccr by default), and move finished packages 
 \fB\-l\fR <\'logfile'\>
 .RS 4
 Log the output of aur2ccr ONLY (not wget, makepkg, pacman, or others) to <logfile>, using tee(1)\&.
+.RE
+
+.PP
+\fB\-s\fR 
+.RS 4
+Perform some setup-related tasks, such as choosing the closest pacman mirrors\&.
 .RE
 
 .PP
