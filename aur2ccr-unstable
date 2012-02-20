@@ -742,6 +742,7 @@ debug "setting trap"; trap clean INT  # trap keyboard interrupts (^C), in order 
 debug "entering 'for' loop"
 for pkgname in $args; do
   debug "checking $pkgname"
+  echo "$1" | grep -q '^..' || (err "Package names must be at least two characters in length"; exit 1) || exit 1 # if the package name is not at least 2 chars, lots of stuff wiull fail.
   if isinccr $pkgname; then
     msg "$pkgname is already in CCR or main Chakra repos."
     msg -n "Continue anyway? [y/N] "
