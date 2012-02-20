@@ -629,6 +629,9 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 		      set -- "$chars" ${@}
 		      debug "new options" "$@"
 		;;
+	# package names won't start with - or --, so we can catch invalid
+	# optiones
+	-[a-z]|--[a-z]) err "$1 is not a valid option" && return 9;;
 	*) args="$args $1";;
     esac;
     shift;
