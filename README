@@ -3,12 +3,9 @@ Pull information from AUR or Arch repos, and make source
 packages that are ready for uploading to CCR.
 
 Todo: 
-add ability to unsplit split PKGBUILDs (almost done);
-add optipkg() function to fix some easy PKGBUILD issues (almost done);
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
 speed up the pacman-output-grepping function (with perl?);
-improve popopts function, to allow options to be used like '-ce';
 perpetual code cleanup;
 find and fix bugs!
 
