@@ -651,7 +651,7 @@ popopts() {  # populate variables, enumerate options and arguments
 	        logfile="$1"
 	        touch "$logfile" >&2> /dev/null
 	        if ! test -w "$logfile"; then
-	          err "specified log file '$logfile is not writable'"
+	          err "specified log file '$logfile' is not writable"
 	          exit 8
 	        fi;
 	        echo >> "$logfile"
