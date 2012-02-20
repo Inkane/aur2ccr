@@ -562,8 +562,9 @@ usage() {
 
 popopts() {  # populate variables, enumerate options and arguments -- crappy - if you have a better way, *please* tell me
   debug "popopts('$@')"
-  while [[ "$1" != "" ]]
+  while [[ "$1" != "" ]];
   do
+    debug "current option $1"
     case "$1" in
         "-m"|"--maintainer") shift
               if [[ "$1" != "" ]]; then
@@ -602,24 +603,34 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
 	      consolidate=1;;
 	"-l"|"--log") shift
 	      if [[ "$1" != "" ]]; then
-	      logfile="$1"
-	      touch "$logfile" >&2> /dev/null
-	      if ! test -w "$logfile"; then
-	        err "specified log file '$logfile is not writable'"
-	        exit 8
-	      fi;
-	      echo >> "$logfile"
-	      echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
-	      echo >> "$logfile"
+	        logfile="$1"
+	        touch "$logfile" >&2> /dev/null
+	        if ! test -w "$logfile"; then
+	          err "specified log file '$logfile is not writable'"
+	          exit 8
+	        fi;
+	        echo >> "$logfile"
+	        echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+	        echo >> "$logfile"
 	      else
-	        exit 9
+	        err "missing logfile" && exit 8
 	      fi;;
 	"-i"|"--install") install=1;;
 	"-s"|"--setup") setup;;
 	"-h"|"--help") usage;;
-	"-v"|"--version") echo "$pname $pver"
-	    exit 0;;
+	"-v"|"--version") echo "$pname $pver" && exit 0;;
 	"-a"|"--add") addad=1;;
+	# match every other option starting with -, followed by two or more
+	# chars
+        -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
+                      # split the option string, add a - before every option
+		      set -- $(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift) "${@:2}"
+		      debug "new options" "$@"
+		      continue
+		;;
+	# package names won't start with - or --, so we can catch invalid
+	# optiones
+	-[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
 	*) args="$args $1";;
     esac;
     shift;
