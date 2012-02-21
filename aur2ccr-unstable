@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.6.8
+# aur2ccr - version 0.6.9
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # Todo: see README (https://github.com/redhat69/aur2ccr/README)
@@ -16,7 +16,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.6.6"
+pname="aur2ccr"         pver="0.6.9"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -608,14 +608,14 @@ usage() {
 
 # helper function for popopt
 validate_option() {
-    if [[ "$1" == "" ]]; then
-	return 127
-    elif [[ $(echo "$1" | cut -c 1) == "-" ]]; then
-        err "option parameter must not start with - "
-	exit 1
-    else
-	return 0
-    fi
+  if [[ "$1" == "" ]]; then
+    return 127
+  elif [[ $(echo "$1" | cut -c 1) == "-" ]]; then
+    err "option parameter must not start with - "
+    exit 1
+  else
+    return 0
+  fi
 }
 
 popopts() {  # populate variables, enumerate options and arguments
@@ -623,91 +623,82 @@ popopts() {  # populate variables, enumerate options and arguments
   while [[ "$1" != "" ]];  do
     debug "current option $1"
     case "$1" in
-        "-m"|"--maintainer") shift
-		if validate_option "$1";  then
-                maintainer="$1";
-              else
-                err "missing maintainer" && exit 2;
-              fi;;
-	"-e"|"--edit") edit=1;;
-	"-c"|"--consolidate") consolidate=1;;
-	"-f"|"--from-src") shift
-	      if validate_option "$1"; then
-	        file="$1";
-	      else
-	        err "missing source file" && exit 3;
-	      fi;;
-	"-u"|"--from-url") shift
-              if validate_option "$1" ; then
-                url="$1";
-              else
-                err "missing url" && exit 4;
-	      fi;;
-	"-d"|"--from-dir") shift
-	      if validate_option "$1"; then
-                pkgdir="$1"
-              else
-                err "missing directory" && exit 5;
-              fi;;
-	"-C"|"--cd") shift
-	      if validate_option "$1"; then
-	        startdir="$1"
-	        finddir="$1"
-	      else
-	        err "missing directory" && exit 6;
-	      fi;;
-	"-t"|"--temp") startdir="$tmpdir"
-	      consolidate=1;;
-	"-l"|"--log") shift
-	      if validate_option "$1"; then
-	        logfile="$1"
-	        touch "$logfile" >&2> /dev/null
-	        if ! test -w "$logfile"; then
-	          err "specified log file '$logfile' is not writable"
-	          exit 8
-	        fi;
-	        echo >> "$logfile"
-	        echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
-	        echo >> "$logfile"
-	      else
-	        err "missing logfile" && exit 8
-	      fi;;
-	"-i"|"--install") install=1;;
-	"-s"|"--setup") setup;;
-	"-h"|"--help") usage;;
-	"-v"|"--version") echo "$pname $pver" && exit 0;;
-	"-a"|"--addad") addad=1;;
-	# match every other option starting with -, followed by two or more chars
-        -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
-                      # split the option string, add a - before every option
-		      argops=$(echo "$1"|echo $(fold -w1))
-		      stmp=""
-		      for char in $noargops
-		      do
-	                case "$char" in
-				"m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
-			        *) argops=${argops:1}&&stmp=${stmp}" "${char}
-			esac
-		      done
-		      debug start $stmp
-		      debug $argops end
-		      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
-		      debug "tmp=" $tmp
-		      set -- $tmp "${@:2}"
-		      debug "new options" "$@"
-		      continue
-		;;
-	# package names won't start with - or --, so we can catch invalid options
-	-[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
-	*) args="$args $1";;
-    esac;
-    shift;
-done;
-if [ -z "$args" -a -z "$url" -a -z "$file" -a -z "$pkgdir" ]; then
-    err "You did not specify any packages to build"
-    err "There is nothing to do. Exiting..."
-    exit 1
-fi
+      "-m"|"--maintainer") shift
+        if validate_option "$1";  then
+          maintainer="$1";
+        else
+          err "missing maintainer" && exit 2;
+        fi;;
+      "-e"|"--edit") edit=1;;
+      "-c"|"--consolidate") consolidate=1;;
+      "-f"|"--from-src") shift
+        if validate_option "$1"; then
+          file="$1";
+        else
+          err "missing source file" && exit 3;
+        fi;;
+      "-u"|"--from-url") shift
+        if validate_option "$1" ; then
+          url="$1";
+        else
+          err "missing url" && exit 4;
+        fi;;
+      "-d"|"--from-dir") shift
+        if validate_option "$1"; then
+          pkgdir="$1"
+        else
+          err "missing directory" && exit 5;
+        fi;;
+      "-C"|"--cd") shift
+        if validate_option "$1"; then
+          startdir="$1" finddir="$1"
+        else
+          err "missing directory" && exit 6;
+        fi;;
+      "-t"|"--temp") startdir="$tmpdir"
+        consolidate=1;;
+      "-l"|"--log") shift
+        if validate_option "$1"; then
+          logfile="$1"
+          touch "$logfile" >&2> /dev/null
+          if ! test -w "$logfile"; then
+            err "specified log file '$logfile' is not writable"
+            exit 8
+          fi;
+          echo >> "$logfile"
+          echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+          echo >> "$logfile"
+        else
+          err "missing logfile" && exit 8
+        fi;;
+      "-i"|"--install") install=1;;
+      "-s"|"--setup") setup;;
+      "-h"|"--help") usage;;
+      "-v"|"--version") echo "$pname $pver" && exit 0;;
+      "-a"|"--addad") addad=1;;
+      # match every other option starting with -, followed by two or more chars
+      -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
+      # split the option string, add a - before every option
+      argops=$(echo "$1"|echo $(fold -w1)) stmp=""
+      for char in $noargops; do
+        case "$char" in
+          "m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
+          *) argops=${argops:1}&&stmp=${stmp}" "${char}
+        esac
+      done
+      debug start $stmp; debug $argops end
+      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
+      debug "tmp=" $tmp
+      set -- $tmp "${@:2}"
+      debug "new options" "$@"
+      continue  ;;
+      # package names won't start with - or --, so we can catch invalid options
+      -[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
+      *) args="$args $1";;
+    esac
+  shift
+done
+[[ -z "$args" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err "You did not specify any packages to build"; err "There is nothing to do. Exiting..."; exit 0) && exit 1
 }
 
 # main()
