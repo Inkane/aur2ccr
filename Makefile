@@ -26,8 +26,8 @@ install-unstable: $(allfiles) # this will install the aur2ccr-unstable script, u
 	install -D -m755 $(unstable) "$(DESTDIR)/usr/bin/"
 
 install-man: # 'make install' calls this, so only do 'make install-man' if all you want is the man page.
-	install -d -m755 "$(DESTDIR)/usr/man/man8"
-	install -D -m644 $(manpages) "$(DESTDIR)/usr/man/man8/"
+	install -d -m755 "$(DESTDIR)/usr/share/man/man8"
+	install -D -m644 $(manpages) "$(DESTDIR)/usr/share/man/man8/"
 
 aur2ccr.8.gz : $(others)
 	gzip -c aur2ccr.8 > aur2ccr.8.gz
@@ -36,4 +36,3 @@ bundle: aur2ccr.txz.sh $(allfiles) # This is for the distributer ONLY, you need 
 
 aur2ccr.txz.sh : $(allfiles)
 	bundle -s -x * > aur2ccr.txz.sh
-
