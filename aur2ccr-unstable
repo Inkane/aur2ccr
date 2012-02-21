@@ -680,7 +680,20 @@ popopts() {  # populate variables, enumerate options and arguments
 	# match every other option starting with -, followed by two or more chars
         -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
                       # split the option string, add a - before every option
-		      set -- $(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift) "${@:2}"
+		      argops=$(echo "$1"|echo $(fold -w1))
+		      stmp=""
+		      for char in $noargops
+		      do
+	                case "$char" in
+				"m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
+			        *) argops=${argops:1}&&stmp=${stmp}" "${char}
+			esac
+		      done
+		      debug start $stmp
+		      debug $argops end
+		      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
+		      debug "tmp=" $tmp
+		      set -- $tmp "${@:2}"
 		      debug "new options" "$@"
 		      continue
 		;;
