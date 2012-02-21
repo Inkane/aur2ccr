@@ -210,7 +210,7 @@ uchksums() {  # update checksums with 'makepkg -gf'
   if echo "$sums" | grep -q "^$stype"; then
     if grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD; then # if all on one line
       debug "s/^$stype.*/$sums/"
-      sed -i "s/^$stype.*/$sums/" PKGBUILD || (err "sed failed while updating checksums"; exit 1) || return 1
+      sed -i "s/^$stype.*/$sums/" PKGBUILD || (err "sed failed while updating checksums - please report this!"; exit 1) || return 1
     elif grep -q "^$stype" PKGBUILD; then
       stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
       debug "awking..."
@@ -228,12 +228,12 @@ uchksums() {  # update checksums with 'makepkg -gf'
   fi
 }
 
-optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors, etc - note that this must be run AFTER the unsplitp function, so it does not break split packages.
+optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors, etc - note that this must be run AFTER the unsplitp function, or it will break split packages.
   debug "optipkg($@)"
   grep -q '^# $Id' PKGBUILD && sed -i '/^# $Id[$:].*$/d' PKGBUILD # get rid of $Id tags, which are not used by CCR.
   grep -q "^[^ ]*=(['\"\s]*)" PKGBUILD && sed -i "/^[^ ]*=(['\"\s]*)/d" PKGBUILD # get rid of empty arrays, like depends=()
   grep -q "^[^ ]*=([^'\"\s][^ ]*[^'\"\s])" PKGBUILD && sed -i "s/\(^[^ ]*=(\)\([^'\"\s][^ ]*[^'\"\s]\)\().*$\)/\1\"\2\"\3/" PKGBUILD # quote unquoted single values in arrays, like arch=(any)
-  # causes errors: grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
+  # seems to cause errors: grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
 }
 
 isplitp() {  # is $1 a split PKGBUILD?
