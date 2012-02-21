@@ -606,13 +606,25 @@ usage() {
   exit 0
 }
 
+# helper function for popopt
+validate_option() {
+    if [[ "$1" == "" ]]; then
+	return 127
+    elif [[ $(echo "$1" | cut -c 1) == "-" ]]; then
+        err "option parameter must not start with - "
+	exit 1
+    else
+	return 0
+    fi
+}
+
 popopts() {  # populate variables, enumerate options and arguments
   debug "popopts('$@')"
   while [[ "$1" != "" ]];  do
     debug "current option $1"
     case "$1" in
         "-m"|"--maintainer") shift
-              if [[ "$1" != "" ]]; then
+		if validate_option "$1";  then
                 maintainer="$1";
               else
                 err "missing maintainer" && exit 2;
@@ -620,25 +632,25 @@ popopts() {  # populate variables, enumerate options and arguments
 	"-e"|"--edit") edit=1;;
 	"-c"|"--consolidate") consolidate=1;;
 	"-f"|"--from-src") shift
-	      if [[ "$1" != "" ]]; then
+	      if validate_option "$1"; then
 	        file="$1";
 	      else
 	        err "missing source file" && exit 3;
 	      fi;;
 	"-u"|"--from-url") shift
-              if [[ "$1" != "" ]]; then
+              if validate_option "$1" ; then
                 url="$1";
               else
                 err "missing url" && exit 4;
 	      fi;;
 	"-d"|"--from-dir") shift
-	      if [[ "$1" != "" ]]; then
+	      if validate_option "$1"; then
                 pkgdir="$1"
               else
                 err "missing directory" && exit 5;
               fi;;
 	"-C"|"--cd") shift
-	      if [[ "$1" != "" ]]; then
+	      if validate_option "$1"; then
 	        startdir="$1"
 	        finddir="$1"
 	      else
@@ -647,7 +659,7 @@ popopts() {  # populate variables, enumerate options and arguments
 	"-t"|"--temp") startdir="$tmpdir"
 	      consolidate=1;;
 	"-l"|"--log") shift
-	      if [[ "$1" != "" ]]; then
+	      if validate_option "$1"; then
 	        logfile="$1"
 	        touch "$logfile" >&2> /dev/null
 	        if ! test -w "$logfile"; then
@@ -668,7 +680,20 @@ popopts() {  # populate variables, enumerate options and arguments
 	# match every other option starting with -, followed by two or more chars
         -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
                       # split the option string, add a - before every option
-		      set -- $(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift) "${@:2}"
+		      argops=$(echo "$1"|echo $(fold -w1))
+		      stmp=""
+		      for char in $noargops
+		      do
+	                case "$char" in
+				"m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
+			        *) argops=${argops:1}&&stmp=${stmp}" "${char}
+			esac
+		      done
+		      debug start $stmp
+		      debug $argops end
+		      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
+		      debug "tmp=" $tmp
+		      set -- $tmp "${@:2}"
 		      debug "new options" "$@"
 		      continue
 		;;
