@@ -232,7 +232,7 @@ optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors, et
   debug "optipkg($@)"
   grep -q '^# $Id' PKGBUILD && sed -i '/^# $Id[$:].*$/d' PKGBUILD # get rid of $Id tags, which are not used by CCR.
   grep -q "^[^ ]*=(['\"\s]*)" PKGBUILD && sed -i "/^[^ ]*=(['\"\s]*)/d" PKGBUILD # get rid of empty arrays, like depends=()
-  grep -q "^[^ ]*=([^'\"\s][^ ]*[^'\"\s])" PKGBUILD && sed -i "s/\(^[^ ]*=(\)\([^'\"\s][^ ]*[^'\"\s]\)\().*$\)/\1'\2'\3/" PKGBUILD # quote unquoted single values in arrays, like arch=(any)
+  grep -q "^[^ ]*=([^'\"\s][^ ]*[^'\"\s])" PKGBUILD && sed -i "s/\(^[^ ]*=(\)\([^'\"\s][^ ]*[^'\"\s]\)\().*$\)/\1\"\2\"\3/" PKGBUILD # quote unquoted single values in arrays, like arch=(any)
   # causes errors: grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
 }
 
