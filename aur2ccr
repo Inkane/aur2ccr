@@ -284,6 +284,7 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
     if grep -q "$1=..*" "$namesconf"; then
       apkgname="$1"
       cpkgname="$(grep "^$1=..*" "$namesconf" | sed "s/$1=//")"
+      return 0
     else
       return 1
     fi
@@ -294,7 +295,9 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
 
 namechange() {  # companion function to namelookup()
   debug "namechange('$@')"
-  namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[(\s'\"]\)${apkgname}\([\s'\")]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
+  namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[(\s'\"]*\)${apkgname}\([\s'\")]\)/\1${cpkgname}\2/g; s/\(['\"]\)${apkgname}\(['\"]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
+  debug "new PKGBUILD: $(cat PKGBUILD)"
+  depends
 }
 
 dotherest() {  # this used to be 150 lines, but I managed to get it down a little bit - it's still too large.
@@ -323,6 +326,7 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down a littl
       msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
       isinrepos $pkg || let depsnotinrep=$depsnotinrep+1
     elif namelookup $pkg; then
+      debug "namelookup returned 0, namechanging..."
       namechange $pkg || (err "Something went wrong while attempting to edit the $pkgname PKGBUILD"; logerr $pkg; exit 1) || return 1
       if isinccr $cpkgname; then
         msg "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
@@ -535,7 +539,7 @@ checkaur() {
     if isoutofdate $1; then
       warn "$1 is marked as out of date in AUR!"
       warn -n "Are you sure you want to continue? [y/N] "; read ans
-      ([[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]] && (warn "Skipping $1"; exit 0)) || (warn "Continuing. This is a bad idea!"; sleep 3)
+      ([[ -z "$ans" || "$ans" == "n" || "$ans" == "N" || "$ans" == "no" ]] && (warn "Skipping $1"; exit 0)) || (warn "Continuing. This is a bad idea!"; sleep 2)
     fi
     makeccrpkg $1 || logerr $1
   elif isinarchr $1; then
