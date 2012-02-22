@@ -1,8 +1,7 @@
 #!/bin/bash
-# aur2ccr - version 0.6.9
+# aur2ccr - version 0.7
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
-# Todo: see README (https://github.com/redhat69/aur2ccr/README)
 # -- CREDITS --
 # This script uses the information on converting Arch/AUR files to CCR from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 # Portions of this script have been taken from "CCR - A Chakra Community Repository helper", which was in turn forked from "Packer by Matthew Bruenig <matthewbruenig@gmail.com>", a GPL3 bash script.
@@ -16,12 +15,11 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.6.9"
+pname="aur2ccr"         pver="0.7"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
-acconf="aur2ccr.conf"
-# initialize variables
+acconf="aur2ccr.conf"   # initialize variables
 startdir="$(pwd)"       findir="$(pwd)"
 badpkgs=0               consolidate=0
 edit=0                  addad=0
@@ -102,15 +100,14 @@ grepacfull() {  # grep the output of pacman -Ss in a useful manner
   for line in $afullist; do
     debug $line
     if [[ "$num" == 0 ]]; then
-      entry="${line}${newline}"
-      num=1
+      entry="${line}${newline}" ; num=1
     elif [[ "$num" == 1 ]]; then
-      entry="${entry}${line}"
-      num=0
-      echo "$entry" | grep -iq "$1" && (echo "$entry"; export ret=1) # this is slow [avg 45-50s total], we need a better way. would perl be faster?
+      entry="${entry}${line}" ; num=0
+      fentry="$(echo "$entry" | grep -i "$1")" # this is slow [avg 45-50s total], we need a better way. would perl be faster?
+      [[ -n "$fentry" ]] && echo "$entry"
+      [[ -n "$fentry" ]] && ret=1
     fi
-  done
-  IFS=" "
+  done ; IFS=" "
   [[ "$ret" == 0 ]] && echo " (nothing found)"
 }
 
@@ -132,7 +129,7 @@ vcsver() {  # look for version control system versions, like pkgname-git
   elif isinccr "$1-svn"; then # subversion
     vpkgname="$1-svn"
     return 0
- elif isinccr "$1-hg"; then # mercurial
+  elif isinccr "$1-hg"; then # mercurial
     vpkgname="$1-hg"
     return 0
   else
@@ -173,8 +170,7 @@ getarchname() {
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
-  # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
-  local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install= 
+  local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install=    # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
   debug "depends($@)"; debug "current dir: $(pwd; ls)"
   . PKGBUILD; IFS=$'\n'
   depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) ); IFS=' '
@@ -208,12 +204,8 @@ uchksums() {  # update checksums with 'makepkg -gf'
   fi
   stype="$(echo $sums | grep -o "^..*sums=")"
   if echo "$sums" | grep -q "^$stype"; then
-    if grep -Pq "(^$stype.*\)|^${stype}[^\(])" PKGBUILD; then # if all on one line
-      debug "s/^$stype.*/$sums/"
-      sed -i "s/^$stype.*/$sums/" PKGBUILD || (err "sed failed while updating checksums - please report this!"; exit 1) || return 1
-    elif grep -q "^$stype" PKGBUILD; then
-      stype="$(echo "$stype" | sed 's/=//; s/\s//g')"
-      debug "awking..."
+    if grep -q "^$stype" PKGBUILD; then
+      stype="$(echo "$stype" | sed 's/=//; s/\s//g')" ; debug "awking..."
       local new="$(awk -v "newsums=$sums" -v "stype=$stype" '$1 ~ stype { t = 1; } t == 1 { if ($0 ~ "\)") { t = 0; print(newsums); next; } next; } { print; }' PKGBUILD 2>/dev/null)" # sheesh. awk courtesy of pr3d4t0r, I haven't a clue how it works.
       debug "sending awk output to PKGBUILD..."
       echo "$new" > PKGBUILD
@@ -233,8 +225,7 @@ optipkg() {  # optimize PKGBUILDs by getting rid of a few easy-to-fix errors, et
   grep -q '^# $Id' PKGBUILD && sed -i '/^# $Id[$:].*$/d' PKGBUILD # get rid of $Id tags, which are not used by CCR.
   grep -q "^[^ ]*=(['\"\s]*)" PKGBUILD && sed -i "/^[^ ]*=(['\"\s]*)/d" PKGBUILD # get rid of empty arrays, like depends=()
   grep -q "^[^ ]*=([^'\"\s][^ ]*[^'\"\s])" PKGBUILD && sed -i "s/\(^[^ ]*=(\)\([^'\"\s][^ ]*[^'\"\s]\)\().*$\)/\1\"\2\"\3/" PKGBUILD # quote unquoted single values in arrays, like arch=(any)
-  # seems to cause errors: grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
-}
+}   # seems to cause errors: grep -q "^package()" PKGBUILD || grep -q "^build()" PKGBUILD && sed -i "/^build()/s//package()/" PKGBUILD # if there is no package() function, but there is a build() function, rename build() to package()
 
 isplitp() {  # is $1 a split PKGBUILD?
   debug "isplitp('$@')"
@@ -278,8 +269,7 @@ getneedeps() { # get the deps we need from CCR, return in $needeps
       exit 1
     fi
   done
-  needeps="$(echo $needeps | sed 's/^\s*//')"
-  debug "neepeds='$needeps'"
+  needeps="$(echo $needeps | sed 's/^\s*//')"; debug "neepeds='$needeps'"
 }
 
 logerr() {  # keep track of errors; $1 is the package name
@@ -520,24 +510,22 @@ makeccrpkg_s() {  # handle split PKGBUILDs
 }
 
 aursearch() {  # this code is stolen from 'packer'. This used to be, and is the equivalent of: packer --auronly -Ss $1 
-  debug "aursearch('$@')" >&2
+  debug "aursearch('$@')" >&2 ; aret=0
   RPCURL="https://aur.archlinux.org/rpc.php?type"
   curl -LfGs --data-urlencode "arg=$1" "$RPCURL=search" | sed -e 's/","/"\n"/g' -e 's/\\//g' > "$tmpdir/$1$UID.search" 
-  parsefile="$tmpdir/$1$UID.search" IFS=$'\n'
-  aurname=( $(grep -F '"Name":"' "$parsefile" | cut -d '"' -f 4) )
-  version=( $(grep -F '"Version":"' "$parsefile" | cut -d '"' -f 4) )
+  parsefile="$tmpdir/$1$UID.search" IFS=$'\n' aurname=( $(grep -F '"Name":"' "$parsefile" | cut -d '"' -f 4) )
+  version=( $(grep -F '"Version":"' "$parsefile" | cut -d '"' -f 4) ) aurtotal="${#aurname[@]}"
   description=( $(grep -F '"Description":"' "$parsefile" | sed -e 's/^"Description":"//' -e 's/"$/ /') )
-  aurtotal="${#aurname[@]}"
   for ((i=0 ; i<$aurtotal ; i++)); do
-    printf "aur/${aurname[$i]} ${version[$i]}\n    ${description[$i]}\n"
+    printf "aur/${aurname[$i]} ${version[$i]}\n    ${description[$i]}\n" ; aret=1
   done
 }
 
 pkgsearch() {  # there is no reason for this function to ever be called except right after isinarchr returns 1
   debug "pkgsearch('$@')"
   warn "Package '$1' not found in AUR or Arch repos."; warn "Did you mean: "; debug "checking aursearch..."
-  local aurpkgs="$(aursearch $1)"
-  ([[ -n "$aurpkgs" ]] && (echo "$aurpkgs"; exit 1)) || (grepacfull $1; exit 1) || exit 1
+  aursearch $1 ;  ([[ -n "$aret" && "$aret" == 1 ]] || grepacfull $1)
+  exit 1
 }
 
 checkaur() {
@@ -573,15 +561,13 @@ usage() {
   debug "usage('$@')"
   echo "Usage: $(basename $0) [OPTIONS] [PACKAGES]" # is this better than $0?
   echo "Create CCR-ready source packages from packages in AUR or Arch repos"
-  echo "Example: $(basename $0) twisted"
-  echo 
+  echo "Example: $(basename $0) twisted" ;  echo 
   echo "General: "
   echo "  -m <maintainer>	  add maintainer information to each PKGBUILD before building"
   echo "  (--maintainer <m...>)   <maintainer> should be in the form 'My Name (nick) <me@example.com>'"
   echo "  -e, --edit		  edit the PKGBUILD for each package with \$EDITOR before building"
   echo "  -c, --consolidate	  move all CCR source packages into the working directory"
-  echo "  -i, --install		  install packages that build successfully, in order to test them"
-  echo
+  echo "  -i, --install		  install packages that build successfully, in order to test them" ; echo
   echo "Advanced: "
   echo "  -f, --from-src <file>   create a CCR source package from source package <file>"
   echo "  -u, --from-url <URL>	  ... or from an AUR/CCR-compatible source package at <URL>"
@@ -589,20 +575,16 @@ usage() {
   echo "  -C, --cd <newdir>	  use <newdir> as the working directory instead of the current dir"
   echo "  -t, --temp		  use '$tmpdir' as the build directory instead of the current dir"
   echo "        		  (all finished src packages will be moved into the working dir, like -c)"
-  echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>"
-  echo
+  echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>" ; echo
   echo "Other: "
   echo "  -s, --setup		  perform setup-related tasks, such as choosing the best Arch mirror"
   echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributer: "
   echo "        		  'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -h, --help		  display this help and exit"
-  echo "  -v, --version		  print version information and exit"
-  echo 
-  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]"
-  echo 
+  echo "  -v, --version		  print version information and exit" ; echo 
+  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]" ; echo 
   echo "Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>"
-  echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>"
-  debug "exiting..."
+  echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>" ; debug "exiting..."
   exit 0
 }
 
