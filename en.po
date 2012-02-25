@@ -1,0 +1,193 @@
+# 69
+msgid "Err"
+msgstr "ERROR:"
+
+# 75
+msgid "Clean1"
+msgstr "clean"
+
+# 76
+msgid "Clean2"
+msgstr "Keyboard interrupt caught, cleaning up..."
+# 76,
+msgid "Exiting"
+msgstr "exiting..."
+
+msgid "Initarchr"
+msgstr "An error occurred while checking Arch repos."
+
+# not sure if this is really for the user
+msgid "Grepacfull"
+msgstr " (nothing found)"
+
+msgid "Isinaur"
+msgstr "Package name must be at least two characters in length"
+
+msgid "Isinarchr"
+msgstr "Checking Arch repos..."
+
+msgid "Getarchname"
+msgstr "not found in Arch repos"
+
+msgid "Addad"
+msgstr "Ad added. Thanks for supporting aur2ccr! :)"
+
+msgid "Uchksums"
+msgstr "'makepg -g' failed in '$(pwd)'!"
+
+msgid "Uchksums2"
+msgstr "something went wrong while updating checksums"
+
+msgid "Getneedeps"
+msgstr "dependency $dep cannot be found!"
+
+msgid "Check If Split"
+msgstr "Checking if this is a split PKGBUILD..."
+
+msgid "Not Split PKGBUILD"
+msgstr "This doesn't appear to be a split PKGBUILD, continuing..."
+
+msgid "Checking And Fixing"
+msgstr "Checking for and fixing common PKGBUILD problems..."
+
+msgid "Done"
+msgstr "done."
+
+msgid "Checking Maintainer"
+msgstr "Changing maintainer information..."
+
+msgid "Failed"
+msgstr "Failed"
+
+# ? missing line 315
+msgid "Opening With Editor"
+msgstr "Opening '$pgkname' PKGBUILD with $EDITOR"
+
+msgid "Dotherest8"
+msgstr "Note: dependencies have not yet been checked, so the PKGBUILD"
+
+msgid "May be changed"
+msgstr "may be changed afer you modify it."
+
+msgid "Special package"
+msgstr "$pkg is a special package in the Chakra repos, continuing"
+
+msgid "Dependency Cycle"
+msgstr "dependency cycle detected!"
+
+msgid "Dotherest12"
+msgstr "skipping '$pkgname' dependency "
+
+msgid "Already In CCR"
+msgstr "$pkgname dependency '$pkg' already in CCR or repos, continuing"
+
+msgid "Editing Error"
+msgstr "Something went wrong while attempting to edit the $pkgname PKGBUILD"
+
+msgid "Already In As"
+msgstr "'$pkgname' dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+
+msgid "Bad Definition"
+msgstr "There seems to be a bad definition in '$namesconf'. Please fix this."
+
+msgid "Offending Line"
+msgstr "The offending line is: '$apkgname=$cpkgname'"
+
+msgid "Not In CCR"
+msgstr "$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages..."
+
+msgid "Error Occured While Building"
+msgstr "Some error occurred while building '$pkg'"
+
+msgid "Error Without Dependency"
+msgstr "Without this dependency, $pkgname cannot be built"
+
+msgid "Dependency Not Found"
+msgstr "Sorry, dependency '$pkg' cannot be found."
+
+msgid "Testing Package"
+msgstr "Testing package '$pkgname'..."
+
+msgid "Error Occured Check PKGBUILD"
+msgstr "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+
+msgid "Dependencies Outside Repos"
+msgstr "Attempting ot install dependencies with 'ccr'..."
+
+msgid "Take A While"
+msgstr "(This may take a while)"
+
+msgid "Already Installed"
+msgstr "Oops, looks like you already have all these dependencies installed."
+
+msgid "Succeded"
+msgstr "Succeded, continuing"
+
+msgid "Removing Packages"
+msgstr "Removing packages..."
+
+msgid "Packages Removed"
+msgstr "Packages removed"
+
+msgid "Could Not Remove"
+msgstr "could not remove packages!"
+
+msgid "Dependencies Outside"
+msgstr "Package '$pkgname' has  dependencies outside of the Chakra repos and CCR."
+
+msgid "Running Will Fail"
+msgstr "Running 'makepg -s' on this package will fail, so we cannot test it now."
+
+msgid "Please Test"
+msgstr "Please test the final .src.tar.gz package manually with ccr."
+
+msgid "Built Succesfully"
+msgstr "Package '$pkgname' built succesfully"
+
+msgid "PKG Moved"
+msgstr "$pkgpkg moved to $findir"
+
+msgid "Could Not Move"
+msgstr "$pkgpkg could not be moved to $findir"
+
+msgid "Installing"
+msgstr "Installing $pkgname"
+
+msgid "Pacman Failed"
+msgstr "pacman failed, trying 'makepg -i'..."
+
+msgid "Installed"
+msgstr "$pkgname installed"
+
+msgid "Could Not Install"
+msgstr "Could not install $pkgname."
+
+msgid "Missing Dependency"
+msgstr "$pkgname cannot be installed, because it is missing dependencies."
+
+msgid "Error Check PKGBUILD"
+msgstr "Some error occurred, check the $pkgname PKGBUILD in '$(pwd)'"
+
+msgid "Cannot Create Directory"
+msgstr "Cannot create directory '$startdir/$pkgname'"
+
+msgid "Download Error"
+msgstr "There was an error downloading the package"
+
+msgid "Extract Error"
+msgstr "tar could not extract the archive"
+
+msgid "Archname Not Found"
+msgstr "'$pkgname' cannot be found"
+
+msgid "Archname Found"
+msgstr "found '$pkgname' as '$archname'"
+
+msgid "Info Retrieved"
+msgstr "$pkgname info retrieved from Arch repos succesfully"
+
+msgid "Chown Failed"
+msgstr "chown failed"
+
+msgid "Error Move Workingdir"
+msgstr "could not move /var/abs/$archname to working dir"
