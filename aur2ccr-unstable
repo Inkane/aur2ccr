@@ -14,6 +14,9 @@
 #  the Chakra devs, for making such an awesome distro;
 #  ...and all others who have used aur2ccr or helped in some other way.
 
+# i19n && l10n
+TEXTDOMAIN=aur2ccr-unstable
+
 # internal settings - you can modify some of these in aur2ccr.conf
 pname="aur2ccr"         pver="0.7"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
