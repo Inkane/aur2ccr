@@ -168,7 +168,7 @@ msgstr "$pkgname cannot be installed, because it is missing dependencies."
 msgid "Error Check PKGBUILD"
 msgstr "Some error occurred, check the $pkgname PKGBUILD in '$(pwd)'"
 
-msgid "Cannot Create Directory"
+msgid "Error Create Directory"
 msgstr "Cannot create directory '$startdir/$pkgname'"
 
 msgid "Download Error"
@@ -191,3 +191,91 @@ msgstr "chown failed"
 
 msgid "Error Move Workingdir"
 msgstr "could not move /var/abs/$archname to working dir"
+
+msgid "Abs Failed"
+msgstr "abs failed"
+
+msgid "Error Valid Source"
+msgstr "The package you specified does not seem to be a valid source archive."
+
+msgid "Error File Open"
+msgstr "'$file' cannot be opened or does not exist"
+
+msgid "Error Not A Directory"
+msgstr "$pkgdir is not a directory or does not exit"
+
+msgid "Error Cannot Open"
+msgstr "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
+
+msgid "Error Copy"
+msgstr "cannot copy files from '$pkgdir'"
+
+msgid "Makeccrpkg1"
+msgstr "'$pkgname' seems to be a split PKGBUILD, which cannot be uploaded to CCR."
+
+msgid "Makeccrpkg2"
+msgstr "For more information on split PKGBUILDs, see PKGBUILD(5) or"
+
+msgid "Makeccrpkg3"
+msgstr "http://www.archlinux.org/pacman/PKGBUILD.5.html#_package_splitting"
+
+msgid "Makeccrpkg4"
+msgstr "aur2ccr can attempt to rectify this by dividing the PKGBUILD up into multiple"
+
+msgid "Makeccrpkg5"
+msgstr "packages, but this is an experimental feature and does not always work. If"
+
+msgid "Makeccrpkg6"
+msgstr "you do not want this script to attempt to 'unsplit' this package, you will"
+
+msgid "Makeccrpkg7"
+msgstr "need to do it manually."
+
+msgid "Makeccrpkg8"
+msgstr "If aur2ccr does try to fix the PKGBUILD, the original will be backed up as"
+
+
+msgid "Makeccrpkg9"
+msgstr "PKGBUILD.orig in the package's build dir. "
+
+msgid "Makeccrpkg10"
+msgstr "Should aur2ccr attempt to fix this PKGBUILD? [y/N] "
+
+msgid "Nofix Split1"
+msgstr "aur2ccr will not attempt to fix this PKGBUILD. You need to fix it"
+
+msgid "Nofix Split2"
+msgstr "manually before uploading the package to CCR."
+
+msgid "Fix Split"
+msgstr "Attempting to fix the PKGBUILD..."
+
+msgid "Fixed Split"
+msgstr "Done. There is no way to see if this worked without testing the packages."
+
+msgid "Did You Mean"
+msgstr "Did you mean: "
+
+msgid "Outdated1"
+msgstr "$1 is marked as out of date in AUR!"
+
+msgid "Outdated2"
+msgstr "$Are you sure you want to continue? [y/N]"
+
+msgid "Skipping"
+msgstr "Skipping $1"
+
+msgid "Bad Idea"
+msgstr "Continuing. This is a bad idea!"
+
+msgid "Found In Arch"
+msgstr "'$1' found in the Arch repos..."
+
+msgid "Setup1"
+msgstr "In order to choose the best mirror, we need to know where you are."
+
+msgid "Setup2"
+msgstr "Please enter your country (leave blank to use '$d_country'): "
+
+msgid "Setup3"
+msgstr ""
