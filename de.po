@@ -1,0 +1,327 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-02-25 22:22+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Translate Toolkit 1.9.0\n"
+
+#: #1
+msgid "Keyboard interrupt caught, cleaning up..."
+msgstr "Tastaturinterrupt abgefangen, räume auf..."
+
+#: #2
+msgid "An error occurred while checking Arch repos."
+msgstr "Ein Fehler trat beim Überprüfen der Arch Paketquellen auf."
+
+#: #3
+msgid "Package names must be at least two characters in length"
+msgstr "Paketnamen müssen mindestens 2 Zeichen lang sein"
+
+#: #4
+msgid "Checking Arch repos..."
+msgstr "Überprüfe Arch Paketquellen..."
+
+#: #5
+msgid "'$1' not found in Arch repos"
+msgstr "Konnte '$1' nicht in den Arch Paketquellen finden"
+
+#: #6
+msgid "Ad added. Thanks for supporing aur2ccr! :)"
+msgstr "Werbung hinzugefügt. Danke fürs Unterstützen von aur2ccr!:)"
+
+#: #7
+msgid "'makepkg -g' failed in '$(pwd)'!"
+msgstr "'makepkg -g' schlug in '$(pwd)' fehl!"
+
+#: #8
+msgid "sed failed while updating checksums"
+msgstr "sed schlug beim Aktualisieren der Prüfsummen fehl"
+
+#: #9
+msgid "something went wrong while updating checksums"
+msgstr "Etwas lief beim Aktualisieren der Prüfsummen schief"
+
+#: #10
+msgid "Changing maintainer information..."
+msgstr "Ändere Maintainer Informationen..."
+
+#: #11
+msgid "Done"
+msgstr "Fertig"
+
+#: #12
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+#: #13
+msgid "checksums for $pkgname updated"
+msgstr "Prüfsummen für $pkgname aktualisiert"
+
+#: #14
+msgid "checksums for $pkgname could not be updated!"
+msgstr "Prüfsummen für $pkgname konnten nicht aktualisiert werden!"
+
+#: #15
+msgid "Opening '$pkgname' PKGBUILD with $EDITOR"
+msgstr "Öffne '$pkgname' PKGBUILD mit $EDITOR"
+
+#: #16
+msgid "Note: dependencies have not yet been checked, so the PKGBUILD"
+msgstr "Bemerkung: Die Abhängigkeiten wurden noch nicht überprüftt, "
+
+#: #17
+msgid " may be changed after you modify it."
+msgstr ""
+"so dass das PKGBUILD nach deinen Bearbeitungen noch modifiziert werden kann."
+
+#: #18
+msgid "$pkg is a special package in the Chakra repos, continuing"
+msgstr "$pkg ist ein spezielles Paket in den Chakra Paketquellen, fahre fort"
+
+#: #19
+msgid "$pkgname dependency '$pkg' already in CCR or repos, continuing"
+msgstr ""
+"$pkgname Abhängigkeit '$pkg' ist bereit im CCR oder den Paketquellen, fahre "
+"fort"
+
+#: #20
+msgid "Something went wrong while attempting to edit the $pkg PKGBUILD"
+msgstr "Etwas lief beim Versuch das $pkg PKGBUILD zu editieren schief"
+
+#: #21
+msgid ""
+"$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', "
+"continuing"
+msgstr ""
+"$pkgname Abhängigkeit '$apkgname' ist bereit im CCR oder den Paketquellen "
+"als '$cpkgname', fahre fort"
+
+#: #22
+msgid "There seems to be a bad definition in $namesconf. Please fix this."
+msgstr ""
+"Es scheint einen falschen Eintrag in $namesconf zu geben. Bitte behebe ihn."
+
+#: #23
+msgid "The offending line is: '$apkgname=$cpkgname'"
+msgstr "Die fehlerhafte Zeile ist: '$apkgname=$cpkgname'"
+
+#: #24
+msgid ""
+"$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+msgstr ""
+"$pkgname Abhängigkeit '$pkg' ist weder im CCR oder den Paketquellen, suche "
+"nach Arch Paketen"
+
+#: #25
+msgid "Some error occurred while building '$pkg'"
+msgstr "Ein Fehler trat beim Bauen von '$pkg' auf"
+
+#: #26
+msgid "Without this dependency, $pkgname cannot be built"
+msgstr "Ohne diese Abhängigkeit kann $pkgname nicht gebaut werden"
+
+#: #27
+msgid "'$pkg' found in the Arch repos..."
+msgstr "Fand '$pkg' in den Arch Paketquellen..."
+
+#: #28
+msgid "Sorry, dependency '$pkg' cannot be found."
+msgstr "Tut mir leid, dass Paket '$pkg' kann nicht gefunden werden."
+
+#: #29
+msgid "Testing package '$pkgname'..."
+msgstr "Teste Paket '$pkgname'..."
+
+#: #30
+msgid "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+msgstr "Ein Fehler trat auf, überprüfe das $pkgname PKGBUILD in $(pwd)"
+
+#: #31
+msgid "Package '$pkgname' has dependencies outside of the Chakra repos."
+msgstr ""
+"Das Paket '$pkgname' hat Abhängigkeiten außerhalb der Chakra Paketquellen."
+
+#: #32
+msgid ""
+"Running 'makepkg -s' on this package will fail, so we cannot test it now."
+msgstr ""
+"Das Anwenden von 'makepkg -s'auf dieses Paket wird fehlschlagen, deswegen "
+"können wir es nicht testen. "
+
+#: #33
+msgid "Please test the final .src.tar.gz package manually with ccr."
+msgstr "Bitte teste das endgültige .src.tar.gz Paket manuell."
+
+#: #34
+msgid "Package '$pkgname' built successfully."
+msgstr "Das Paket '$pkgname' wurde erfolgreich gebaut."
+
+#: #35
+msgid "$pkgpkg moved to $findir"
+msgstr "$pkgpkg wurde nach $findir verschoben"
+
+#: #36
+msgid "There was an error while trying to download the package."
+msgstr "Es gab einen Fehler beim Herunterladen des Paketes."
+
+#: #37
+msgid "tar could not extract the archive"
+msgstr "tar konnte das Archiv nicht extrahieren"
+
+#: #38
+msgid "'$pkgname' cannot be found"
+msgstr "'$pkgname' konnte nicht gefunden werden"
+
+#: #39
+msgid "found '$pkgname' as '$archname'"
+msgstr "Fand '$pkgname' als '$archname'"
+
+#: #40
+msgid "$pkgname info retrieved from Arch repos successfully"
+msgstr "Empfing erfolgreich $pkgname Informationen von den Arch Paketquellen "
+
+#: #41
+msgid "chown failed"
+msgstr "chown schlug fehl"
+
+#: #42
+msgid "could not move /var/abs/$archname to working dir"
+msgstr ""
+"konnte /var/abs/$archname nicht ins aktuelle Arbeitsverzeichnis verschieben"
+
+#: #43
+msgid "abs failed"
+msgstr "abs schlug fehl"
+
+#: #44
+msgid "There was an error while trying to download the package"
+msgstr "Es gab einen Fehler beim Herunterladen des Paketes"
+
+#: #45
+msgid "The package you specified does not seem to be a valid source archive."
+msgstr "Das gewählte Paket scheint kein gültiges Quellarchiv zu sein."
+
+#: #46
+msgid "'$file' cannot be opened or does not exist"
+msgstr "'$file' kann nicht geöffnet werden oder existiert nicht"
+
+#: #47
+msgid "$pkgdir is not a directory or does not exist"
+msgstr "'$pkgdir' ist kein Verzeichnis oder existiert nicht"
+
+#: #48
+msgid "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
+msgstr "'$pkgdir/PKGBUILD' kann nicht geöffnet werden oder existiert nicht"
+
+#: #49
+msgid "cannot create directory '$startdir/$pkgname'"
+msgstr "kann kein Verzeichnis '$startdir/$pkgname' erstellen"
+
+#: #50
+msgid "cannot copy files from '$pkgdir'"
+msgstr "kann keine Dateien von '$pkgdir' kopieren"
+
+#: #51
+msgid "Package '$1' not found in AUR or Arch repos."
+msgstr "Konnte '$1' nicht im AUR oder in den Arch Paketquellen finden."
+
+#: #52
+msgid "Did you mean: "
+msgstr "Meinten Sie:"
+
+#: #53
+msgid "'$1' found in AUR..."
+msgstr "Fand '$1' im AUR..."
+
+#: #54
+msgid "$1 is marked as out of date in AUR!"
+msgstr "$1 ist im AUR als veraltet markiert! "
+
+#: #55
+msgid "Skipping $1"
+msgstr "Überspringe $1"
+
+#: #56
+msgid "Continuing. This is a bad idea!"
+msgstr "Fahre fort. Das ist eine schlechte Idee!"
+
+#: #57
+msgid "'$1' found in the Arch repos..."
+msgstr "Fand '$1' in den Arch Paketquellen..."
+
+#: #58
+msgid "specified log file '$logfile' is not writable"
+msgstr "angegebene Logdatei '$logfile' ist nicht schreibbar"
+
+#: #59
+msgid "You did not specify any packages to build"
+msgstr "Sie haben kein Paket zum Bauen angegegeben"
+
+#: #60
+msgid "There is nothing to do. Exiting..."
+msgstr "Es gibt nichts zu tun. Höre auf..."
+
+#: #61
+msgid "Sorry, you need '$bin' to use this script."
+msgstr "Tut mir leid, Sie benötigen '$bin' um dieses Skript zu benutzen."
+
+#: #62
+msgid ""
+"Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer "
+"sed'"
+msgstr ""
+"Versuche 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer "
+"sed' auszuführen"
+
+#: #63
+msgid "$pkgname is already in CCR or main Chakra repos."
+msgstr "$pkgname ist bereit im CCR oder den Paketquellen."
+
+#: #64
+msgid "Skipping $pkgname"
+msgstr "Überspringe $pkgname"
+
+#: #65
+msgid "$apkgname is already in CCR or main Chakra repos as $cpkgname."
+msgstr "$apkgname ist bereit im CCR oder den Paketquellen als $cpkgname."
+
+#: #66
+msgid "$pkgname is already in CCR or main Chakra repos as $vpkgname."
+msgstr "$pkgname ist bereit im CCR oder den Paketquellen als $vpkgname."
+
+#: #67
+msgid "$badpkgs package(s) failed"
+msgstr "$badpkgs Paket(e) schlug(en) fehl"
+
+#: #68
+msgid ""
+"Remember, just because aur2ccr seems to have succeeded, does not mean the "
+"package(s)"
+msgstr ""
+"Vergiss nicht, nur weil aur2ccr zu funktionieren scheint, heißt das noch "
+"lange nicht,"
+
+#: #69
+msgid ""
+"will work. Please thoroughly test all packages BEFORE uploading them to CCR."
+msgstr ""
+"dass die Pakete auchfunktionieren. Bitte teste alle Pakete sorgfältig VOR "
+"dem Hochladen ins CCR."
+
+#: #70
+msgid "Broken packages may be removed without warning."
+msgstr "Defekte Pakete können ohne Warnung entfernt werden."
+
+#: #71
+msgid "The bad package(s) are:"
+msgstr "Die misslungenen Pakete sind:"
+
+#: #72
+msgid "$failedpkgs"
+msgstr "$failedpkgs"

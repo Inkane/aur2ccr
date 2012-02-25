@@ -1,0 +1,307 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Language: de_DE\n"
+"X-Source-Language: C\n"
+
+#: aur2ccr-unstable:107
+msgid "Keyboard interrupt caught, cleaning up..."
+msgstr ""
+
+#: aur2ccr-unstable:121
+msgid "An error occurred while checking Arch repos."
+msgstr ""
+
+#: aur2ccr-unstable:194
+msgid "Package names must be at least two characters in length"
+msgstr ""
+
+#: aur2ccr-unstable:202
+msgid "Checking Arch repos..."
+msgstr ""
+
+#: aur2ccr-unstable:212
+msgid "'$1' not found in Arch repos"
+msgstr ""
+
+#: aur2ccr-unstable:233
+msgid "Ad added. Thanks for supporing aur2ccr! :)"
+msgstr ""
+
+#: aur2ccr-unstable:244
+msgid "'makepkg -g' failed in '$(pwd)'!"
+msgstr ""
+
+#: aur2ccr-unstable:255
+msgid "sed failed while updating checksums"
+msgstr ""
+
+#: aur2ccr-unstable:271
+msgid "something went wrong while updating checksums"
+msgstr ""
+
+#: aur2ccr-unstable:281
+msgid "Changing maintainer information..."
+msgstr ""
+
+#: aur2ccr-unstable:283
+msgid "Done"
+msgstr ""
+
+#: aur2ccr-unstable:283
+msgid "Failed"
+msgstr ""
+
+#: aur2ccr-unstable:288
+msgid "checksums for $pkgname updated"
+msgstr ""
+
+#: aur2ccr-unstable:288
+msgid "checksums for $pkgname could not be updated!"
+msgstr ""
+
+#: aur2ccr-unstable:291
+msgid "Opening '$pkgname' PKGBUILD with $EDITOR"
+msgstr ""
+
+# getrennter Satz, Rest steht im nächsten Satz 
+#: aur2ccr-unstable:292
+msgid "Note: dependencies have not yet been checked, so the PKGBUILD"
+msgstr ""
+
+#: aur2ccr-unstable:293
+msgid " may be changed after you modify it."
+msgstr ""
+
+#: aur2ccr-unstable:301
+msgid "$pkg is a special package in the Chakra repos, continuing"
+msgstr ""
+
+#: aur2ccr-unstable:303
+msgid "$pkgname dependency '$pkg' already in CCR or repos, continuing"
+msgstr ""
+
+#: aur2ccr-unstable:310
+msgid "Something went wrong while attempting to edit the $pkg PKGBUILD"
+msgstr ""
+
+#: aur2ccr-unstable:314
+msgid ""
+"$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', "
+"continuing"
+msgstr ""
+
+#: aur2ccr-unstable:319
+msgid "There seems to be a bad definition in $namesconf. Please fix this."
+msgstr ""
+
+#: aur2ccr-unstable:320
+msgid "The offending line is: '$apkgname=$cpkgname'"
+msgstr ""
+
+#: aur2ccr-unstable:327
+msgid ""
+"$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+msgstr ""
+
+#: aur2ccr-unstable:332
+msgid "Some error occurred while building '$pkg'"
+msgstr ""
+
+#: aur2ccr-unstable:333
+msgid "Without this dependency, $pkgname cannot be built"
+msgstr ""
+
+#: aur2ccr-unstable:342
+msgid "'$pkg' found in the Arch repos..."
+msgstr ""
+
+#: aur2ccr-unstable:356
+msgid "Sorry, dependency '$pkg' cannot be found."
+msgstr ""
+
+#: aur2ccr-unstable:364
+msgid "Testing package '$pkgname'..."
+msgstr ""
+
+#: aur2ccr-unstable:366
+msgid "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+msgstr ""
+
+#: aur2ccr-unstable:372
+msgid "Package '$pkgname' has dependencies outside of the Chakra repos."
+msgstr ""
+
+#: aur2ccr-unstable:373
+msgid ""
+"Running 'makepkg -s' on this package will fail, so we cannot test it now."
+msgstr ""
+
+#: aur2ccr-unstable:374
+msgid "Please test the final .src.tar.gz package manually with ccr."
+msgstr ""
+
+#: aur2ccr-unstable:377
+msgid "Package '$pkgname' built successfully."
+msgstr ""
+
+#: aur2ccr-unstable:381
+msgid "$pkgpkg moved to $findir"
+msgstr ""
+
+#: aur2ccr-unstable:402
+msgid "There was an error while trying to download the package."
+msgstr ""
+
+#: aur2ccr-unstable:408
+msgid "tar could not extract the archive"
+msgstr ""
+
+#: aur2ccr-unstable:439
+msgid "'$pkgname' cannot be found"
+msgstr ""
+
+#: aur2ccr-unstable:442
+msgid "found '$pkgname' as '$archname'"
+msgstr ""
+
+#: aur2ccr-unstable:447
+msgid "$pkgname info retrieved from Arch repos successfully"
+msgstr ""
+
+#: aur2ccr-unstable:449
+msgid "chown failed"
+msgstr ""
+
+#: aur2ccr-unstable:453
+msgid "could not move /var/abs/$archname to working dir"
+msgstr ""
+
+#: aur2ccr-unstable:458
+msgid "abs failed"
+msgstr ""
+
+#: aur2ccr-unstable:481
+msgid "There was an error while trying to download the package"
+msgstr ""
+
+#: aur2ccr-unstable:495
+msgid "The package you specified does not seem to be a valid source archive."
+msgstr ""
+
+#: aur2ccr-unstable:515
+msgid "'$file' cannot be opened or does not exist"
+msgstr ""
+
+#: aur2ccr-unstable:554
+msgid "$pkgdir is not a directory or does not exist"
+msgstr ""
+
+#: aur2ccr-unstable:559
+msgid "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
+msgstr ""
+
+#: aur2ccr-unstable:566
+msgid "cannot create directory '$startdir/$pkgname'"
+msgstr ""
+
+#: aur2ccr-unstable:571
+msgid "cannot copy files from '$pkgdir'"
+msgstr ""
+
+#: aur2ccr-unstable:624
+msgid "Package '$1' not found in AUR or Arch repos."
+msgstr ""
+
+#: aur2ccr-unstable:625
+msgid "Did you mean: "
+msgstr ""
+
+#: aur2ccr-unstable:644
+msgid "'$1' found in AUR..."
+msgstr ""
+
+#: aur2ccr-unstable:646
+msgid "$1 is marked as out of date in AUR!"
+msgstr ""
+
+#: aur2ccr-unstable:650
+msgid "Skipping $1"
+msgstr ""
+
+#: aur2ccr-unstable:653
+msgid "Continuing. This is a bad idea!"
+msgstr ""
+
+#: aur2ccr-unstable:661
+msgid "'$1' found in the Arch repos..."
+msgstr ""
+
+#: aur2ccr-unstable:729
+msgid "specified log file '$logfile' is not writable"
+msgstr ""
+
+#: aur2ccr-unstable:776
+msgid "You did not specify any packages to build"
+msgstr ""
+
+#: aur2ccr-unstable:777
+msgid "There is nothing to do. Exiting..."
+msgstr ""
+
+#: aur2ccr-unstable:792
+msgid "Sorry, you need '$bin' to use this script."
+msgstr ""
+
+#: aur2ccr-unstable:793
+msgid ""
+"Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer "
+"sed'"
+msgstr ""
+
+#: aur2ccr-unstable:847
+msgid "$pkgname is already in CCR or main Chakra repos."
+msgstr ""
+
+#: aur2ccr-unstable:851
+msgid "Skipping $pkgname"
+msgstr ""
+
+#: aur2ccr-unstable:857
+msgid "$apkgname is already in CCR or main Chakra repos as $cpkgname."
+msgstr ""
+
+#: aur2ccr-unstable:867
+msgid "$pkgname is already in CCR or main Chakra repos as $vpkgname."
+msgstr ""
+
+#: aur2ccr-unstable:889
+msgid "$badpkgs package(s) failed"
+msgstr ""
+
+# Mehrzeiler
+#: aur2ccr-unstable:895
+msgid ""
+"Remember, just because aur2ccr seems to have succeeded, does not mean the "
+"package(s)"
+msgstr ""
+
+#: aur2ccr-unstable:896
+msgid ""
+"will work. Please thoroughly test all packages BEFORE uploading them to CCR."
+msgstr ""
+
+#: aur2ccr-unstable:897
+msgid "Broken packages may be removed without warning."
+msgstr ""
+
+#: aur2ccr-unstable:900
+msgid "The bad package(s) are:"
+msgstr ""
+
+#: aur2ccr-unstable:901
+msgid "$failedpkgs"
+msgstr ""
