@@ -15,6 +15,9 @@
 #  the Chakra devs, for making such an awesome distro;
 #  ...and all others who have used aur2ccr or helped in some other way.
 
+# i19n && l10n
+TEXTDOMAIN=aur2ccr-unstable
+
 # internal settings - not all of these are used yet, but they will be someday
 pname="aur2ccr"
 pver="0.6.1"
