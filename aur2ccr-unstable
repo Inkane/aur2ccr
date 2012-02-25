@@ -104,7 +104,7 @@ err() { # make aur2ccr's error messages prettier and more unified.
 clean() {  # clean up temp files
   debug "clean('$@')"
   debug "cleaning..."
-  warn "Keyboard interrupt caught, cleaning up..."
+  warn $"Keyboard interrupt caught, cleaning up..."
   debug "exiting..."
   exit 1
 }
@@ -118,7 +118,7 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
     debug "sudo pacman -Sy ..."
     sudo pacman -Sy >&2> /dev/null
   else
-    err "An error occurred while checking Arch repos."
+    err $"An error occurred while checking Arch repos."
     debug "exiting..."
     exit 1
   fi
@@ -191,7 +191,7 @@ isinrepos() {  # check in main Chakra repos for package - stolen from 'ccr'
 isinaur() {
   debug "isinaur('$@')"
   if !(echo "$1" | grep -q '^..'); then  # if the package name is not at least 2 chars, checking aur will fail.
-    err "Package names must be at least two characters in length"
+    err $"Package names must be at least two characters in length"
     exit 1
   fi
   wget -q --spider "https://aur.archlinux.org/packages/$(echo "$1" | sed 's/\(..\).*/\1/')/$1/PKGBUILD"
@@ -199,7 +199,7 @@ isinaur() {
 
 isinarchr() {
   debug "isinarchr('$@')"
-  msg "Checking Arch repos..."
+  msg $"Checking Arch repos..."
   [ "$archrinit" == 0 ] && initarchr
   echo "$areplist" | grep -q "^$1$"  # much nicer than the old function
 }
@@ -209,7 +209,7 @@ getarchname() {
   if isinarchr $1; then
     archname=$(echo "$afullist" | grep -o "^[^ ]*/$1\s" | sed 's/\s//g')
   else
-    err "'$1' not found in Arch repos"
+    err $"'$1' not found in Arch repos"
     return 1
   fi
 }
@@ -230,7 +230,7 @@ addmaintainer() {  # change maintainer info in the PKGBUILD
 
 addad() {
   debug "addad('$@')"
-  ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporing aur2ccr! :)"
+  ed -s PKGBUILD << EOF && msg $"Ad added. Thanks for supporing aur2ccr! :)"
 2i
 # Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
 .
@@ -241,7 +241,7 @@ EOF
 uchksums() {  # update checksums with 'makepkg -gf'
   debug "uchksums($@)"
   if !(makepkg -gf > "$tmpdir/${PID}${UID}.sums"); then
-    err "'makepkg -g' failed in '$(pwd)'!"
+    err $"'makepkg -g' failed in '$(pwd)'!"
     exit 1
   else
     sums="$(cat "$tmpdir/${PID}${UID}.sums")"
@@ -252,7 +252,7 @@ uchksums() {  # update checksums with 'makepkg -gf'
       if (sed -i "s/^$stype.*/$sums/" PKGBUILD); then
         return 0
       else
-        err "sed failed while updating checksums"
+        err $"sed failed while updating checksums"
         return 1
       fi
     elif (grep -q "^$stype" PKGBUILD); then
@@ -268,7 +268,7 @@ uchksums() {  # update checksums with 'makepkg -gf'
       return 1
     fi
   else
-    err "something went wrong while updating checksums"
+    err $"something went wrong while updating checksums"
     return 1
   fi
 }
@@ -278,19 +278,19 @@ dotherest() {
   local pkgname=$1
   depsnotinrep=0
   if [ -n "$maintainer" ]; then
-    msg "Changing maintainer information..."
+    msg $"Changing maintainer information..."
     debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."
-    addmaintainer "$maintainer" && msg "Done" || err "Failed"
+    addmaintainer "$maintainer" && msg $"Done" || err $"Failed"
   fi
   debug "if \$addad then addad..."
   [ "$addad" == 1 ] && addad
   debug "if uchksums..."
-  uchksums && msg "checksums for $pkgname updated" || warn "checksums for $pkgname could not be updated!"
+  uchksums && msg $"checksums for $pkgname updated" || warn $"checksums for $pkgname could not be updated!"
   debug "if \$edit, then edit..."
   if [ "$edit" -eq 1 ]; then
-    msg "Opening '$pkgname' PKGBUILD with $EDITOR"
-    warn "Note: dependencies have not yet been checked, so the PKGBUILD"
-    warn " may be changed after you modify it."
+    msg $"Opening '$pkgname' PKGBUILD with $EDITOR"
+    warn $"Note: dependencies have not yet been checked, so the PKGBUILD"
+    warn $" may be changed after you modify it."
     debug "\$EDITOR PKGBUILD"
     ${EDITOR-vi} PKGBUILD
   fi
@@ -298,39 +298,39 @@ dotherest() {
   debug "for pkg in ${depends[@]}..."
   for pkg in ${depends[@]}; do 
     if [ "$pkg" == "java-environment" -o "$pkg" == "java-runtime" ]; then
-      msg "$pkg is a special package in the Chakra repos, continuing"
+      msg $"$pkg is a special package in the Chakra repos, continuing"
     elif isinccr $pkg; then 
-      msg "$pkgname dependency '$pkg' already in CCR or repos, continuing"
+      msg $"$pkgname dependency '$pkg' already in CCR or repos, continuing"
       if !(isinrepos $pkg); then
         let depsnotinrep=$depsnotinrep+1
       fi
     elif namelookup $pkg; then
       namelookup $pkg
       if !(namechange $pkg); then
-        err "Something went wrong while attempting to edit the $pkg PKGBUILD"
+        err $"Something went wrong while attempting to edit the $pkg PKGBUILD"
         return 1
       fi
       if isinccr $cpkgname; then
-        msg "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
+        msg $"$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', continuing"
         if !(isinrepos $cpkgname); then
           let depsnotinrep=$depsnotinrep+1
         fi
       else 
-        err "There seems to be a bad definition in $namesconf. Please fix this."
-        err "The offending line is: '$apkgname=$cpkgname'"
+        err $"There seems to be a bad definition in $namesconf. Please fix this."
+        err $"The offending line is: '$apkgname=$cpkgname'"
         let badpkgs=$badpkgs+1
         return 1
       fi
     else
       debug "depsnotinrep++"
       let depsnotinrep=$depsnotinrep+1
-      msg "$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
+      msg $"$pkgname dependency '$pkg' not in CCR or repos, looking at Arch packages"
       if isinaur $pkg; then
         debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
         if !(makeccrpkg $pkg); then
-          err "Some error occurred while building '$pkg'"
-          err "Without this dependency, $pkgname cannot be built"
+          err $"Some error occurred while building '$pkg'"
+          err $"Without this dependency, $pkgname cannot be built"
           debug "popd"
           popd >/dev/null
           return 1
@@ -339,12 +339,12 @@ dotherest() {
           popd >/dev/null
         fi
       elif isinarchr $pkg; then
-        msg "'$pkg' found in the Arch repos..."
+        msg $"'$pkg' found in the Arch repos..."
         debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
         if !(makeccrpkg_r $pkg); then 
-          err "Some error occurred while building '$pkg'"
-          err "Without this dependency, $pkgname cannot be built"
+          err $"Some error occurred while building '$pkg'"
+          err $"Without this dependency, $pkgname cannot be built"
           debug "popd"
           popd >/dev/null
           return 1
@@ -353,35 +353,35 @@ dotherest() {
           popd >/dev/null
         fi
       else
-        err "Sorry, dependency '$pkg' cannot be found."
-        err "Without this dependency, $pkgname cannot be built"
+        err $"Sorry, dependency '$pkg' cannot be found."
+        err $"Without this dependency, $pkgname cannot be built"
         let badpkgs=$badpkgs+1
         return 1
       fi
     fi
   done
   if [ "$depsnotinrep" -eq 0 ]; then
-    msg "Testing package '$pkgname'..."
+    msg $"Testing package '$pkgname'..."
     if !(makepkg -sfr); then
-      err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+      err $"Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $pkgname"
       return 1
     fi
   else
-    warn "Package '$pkgname' has dependencies outside of the Chakra repos."
-    warn "Running 'makepkg -s' on this package will fail, so we cannot test it now."
-    warn "Please test the final .src.tar.gz package manually with ccr."
+    warn $"Package '$pkgname' has dependencies outside of the Chakra repos."
+    warn $"Running 'makepkg -s' on this package will fail, so we cannot test it now."
+    warn $"Please test the final .src.tar.gz package manually with ccr."
   fi
   if (makepkg --source -f); then
-    msg "Package '$pkgname' built successfully."
+    msg $"Package '$pkgname' built successfully."
     if [ "$consolidate" -eq 1 ]; then
       pkgpkg="$(ls $pkgname*.src.tar.gz)"
       mv $pkgpkg "$findir"
-      msg "$pkgpkg moved to $findir"
+      msg $"$pkgpkg moved to $findir"
     fi
   else
-    err "Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
+    err $"Some error occurred, check the $pkgname PKGBUILD in $(pwd)"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -399,13 +399,13 @@ makeccrpkg() {    # grab a package from AUR, and make it into a CCR-ready src pa
     rm "$pkgname.tar.gz"
   fi
   if !(wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz"); then
-    err "There was an error while trying to download the package."
+    err $"There was an error while trying to download the package."
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   if !(tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz"); then
-    err "tar could not extract the archive"
+    err $"tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -436,26 +436,26 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
   #
   getarchname $pkgname
   if [ "$archname" == 0 ]; then
-    err "'$pkgname' cannot be found"
+    err $"'$pkgname' cannot be found"
     return 1
   fi # else...
-  msg "found '$pkgname' as '$archname'"
+  msg $"found '$pkgname' as '$archname'"
   if (sudo abs "$archname"); then
     rm -rf "./$pkgname"
     if (sudo mv "/var/abs/$archname" "./$pkgname"); then
       if (sudo chown -hR $USER:$GROUPS "./$pkgname"); then
-        msg "$pkgname info retrieved from Arch repos successfully"
+        msg $"$pkgname info retrieved from Arch repos successfully"
       else
-        err "chown failed"
+        err $"chown failed"
 	return 1
       fi
     else
-      err "could not move /var/abs/$archname to working dir"
+      err $"could not move /var/abs/$archname to working dir"
       let badpkgs=$badpkgs+1
       return 1
     fi
   else
-    err "abs failed"
+    err $"abs failed"
     let badpkgs=$badpkgs+1
     return 1
   fi
@@ -478,21 +478,21 @@ makeccrpkg_u() {
   cd "$pkgname"
   myfile="$BASHPID-$(basename "$url")"
   if !(wget -O "$myfile" "$url"); then 
-    err "There was an error while trying to download the package"
+    err $"There was an error while trying to download the package"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   dir="$(tar -taf "$myfile" | head -1)"
   if !(tar -xaf "$myfile"); then
-    err "tar could not extract the archive"
+    err $"tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   cd "$dir"
   if ! test -r PKGBUILD; then
-    err "The package you specified does not seem to be a valid source archive."
+    err $"The package you specified does not seem to be a valid source archive."
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -512,7 +512,7 @@ makeccrpkg_f() {
   debug "makeccrpkg_f('$@')"
   cd "$startdir"
   if ! test -r "$file"; then
-    err "'$file' cannot be opened or does not exist"
+    err $"'$file' cannot be opened or does not exist"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -521,7 +521,7 @@ makeccrpkg_f() {
   mkdir -p "$pkgname"
   dir="$(tar -taf "$file" | head -1)"
   if !(tar -xaf "$file" -C "$pkgname"); then
-    err "tar could not extract the archive"
+    err $"tar could not extract the archive"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -529,7 +529,7 @@ makeccrpkg_f() {
   cd "$pkgname"
   cd "$dir"
   if ! test -r PKGBUILD; then
-    err "The package you specified does not seem to be a valid source archive."
+    err $"The package you specified does not seem to be a valid source archive."
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -551,24 +551,24 @@ makeccrpkg_d() {  # uses $pkgdir as directory containting PKGBUILD. (argument to
   if test -d "$pkgdir"; then
     cd "$pkgdir"
   else
-    err "$pkgdir is not a directory or does not exist"
+    err $"$pkgdir is not a directory or does not exist"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi; if ! test -r "PKGBUILD"; then
-    err "'$pkgdir/PKGBUILD' cannot be opened or does not exist"
+    err $"'$pkgdir/PKGBUILD' cannot be opened or does not exist"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi
   cd "$startdir"
   if !(mkdir -p "$pkgname"); then
-    err "cannot create directory '$startdir/$pkgname'"
+    err $"cannot create directory '$startdir/$pkgname'"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
   fi; if !(cp -r "$pkgdir" "$pkgname/"); then
-    err "cannot copy files from '$pkgdir'"
+    err $"cannot copy files from '$pkgdir'"
     let badpkgs=$badpkgs+1
     failedpkgs="$failedpkgs $pkgname"
     return 1
@@ -621,8 +621,8 @@ aursearch() {  # uses 'packer'
 
 pkgsearch() { # there is no reason for this function to ever be called except right after isinarchr returns 1
   debug "pkgsearch('$@')"
-  warn "Package '$1' not found in AUR or Arch repos."
-  warn "Did you mean: "
+  warn $"Package '$1' not found in AUR or Arch repos."
+  warn $"Did you mean: "
   debug "checking aursearch..."
   local aurpkgs="$(aursearch $1)"
   if [ -n "$aurpkgs" ]; then
@@ -641,16 +641,16 @@ pkgsearch() { # there is no reason for this function to ever be called except ri
 checkaur() {
   debug "checkaur('$@')"
   if isinaur $1; then 
-    msg "'$1' found in AUR..."
+    msg $"'$1' found in AUR..."
     if isoutofdate $1; then
-      warn "$1 is marked as out of date in AUR!"
+      warn $"$1 is marked as out of date in AUR!"
       warn -n "Are you sure you want to continue? [y/N] "
       read ans
       if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then
-        warn "Skipping $1"
+        warn $"Skipping $1"
         return 0
       else
-        warn "Continuing. This is a bad idea!"; sleep 3
+        warn $"Continuing. This is a bad idea!"; sleep 3
       fi
     fi
     if !(makeccrpkg $1); then
@@ -658,7 +658,7 @@ checkaur() {
       failedpkgs="$failedpkgs $1"
     fi
   elif isinarchr $1; then
-    msg "'$1' found in the Arch repos..."
+    msg $"'$1' found in the Arch repos..."
     if !(makeccrpkg_r $1); then
       let badpkgs=$badpkgs+1
       failedpkgs="$failedpkgs $1"
@@ -726,7 +726,7 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
       logfile="$arg"
       touch "$logfile" >&2> /dev/null
       if ! test -w "$logfile"; then
-        err "specified log file '$logfile' is not writable"
+        err $"specified log file '$logfile' is not writable"
         exit 1
       fi
       echo >> "$logfile"
@@ -773,8 +773,8 @@ popopts() {  # populate variables, enumerate options and arguments -- crappy - i
     startdir="$tmpdir"
   fi
   if [ -z "$args" -a -z "$url" -a -z "$file" -a -z "$pkgdir" ]; then 
-    err "You did not specify any packages to build"
-    err "There is nothing to do. Exiting..."
+    err $"You did not specify any packages to build"
+    err $"There is nothing to do. Exiting..."
     exit 1
   fi
 }
@@ -789,8 +789,8 @@ for bin in ${programs[@]}; do
     continue
   else
     debug " not found"
-    err "Sorry, you need '$bin' to use this script."
-    err "Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer sed'"
+    err $"Sorry, you need '$bin' to use this script."
+    err $"Try running 'sudo pacman -Sy abs base-devel ccr cmake curl gawk jshon packer sed'"
     exit 1
   fi
 done
@@ -844,31 +844,31 @@ debug "entering 'for' loop"
 for pkgname in $args; do
   debug "checking $pkgname"
   if isinccr $pkgname; then
-    msg "$pkgname is already in CCR or main Chakra repos."
+    msg $"$pkgname is already in CCR or main Chakra repos."
     msg -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
-      warn "Skipping $pkgname"
+      warn $"Skipping $pkgname"
       continue
     else 
       checkaur $pkgname
     fi
   elif namelookup $pkgname; then
-    msg "$apkgname is already in CCR or main Chakra repos as $cpkgname."
+    msg $"$apkgname is already in CCR or main Chakra repos as $cpkgname."
     msg -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
-      warn "Skipping $pkgname"
+      warn $"Skipping $pkgname"
       continue
     else 
       checkaur $pkgname
     fi
   elif vcsver $pkgname; then
-    msg "$pkgname is already in CCR or main Chakra repos as $vpkgname."
+    msg $"$pkgname is already in CCR or main Chakra repos as $vpkgname."
     msg -n "Continue anyway? [y/N] "
     read ans
     if [ -z "$ans" -o "$ans" == "n" -o "$ans" == "N" ]; then 
-      warn "Skipping $pkgname"
+      warn $"Skipping $pkgname"
       continue
     else 
       checkaur $pkgname
@@ -886,19 +886,19 @@ fi; if [ -n "$pkgdir" ]; then
 fi
 
 if [ "$badpkgs" -gt 0 ]; then
-  err "$badpkgs package(s) failed"
+  err $"$badpkgs package(s) failed"
   debug "at least $badpkgs packages failed, exiting..."
   exit 1
 else
-  msg "$badpkgs package(s) failed"
+  msg $"$badpkgs package(s) failed"
   debug "0 pkgs failed, exiting..."
-  warn "Remember, just because aur2ccr seems to have succeeded, does not mean the package(s)"
-  warn "will work. Please thoroughly test all packages BEFORE uploading them to CCR."
-  warn "Broken packages may be removed without warning."
+  warn $"Remember, just because aur2ccr seems to have succeeded, does not mean the package(s)"
+  warn $"will work. Please thoroughly test all packages BEFORE uploading them to CCR."
+  warn $"Broken packages may be removed without warning."
   exit 0
 fi; if [ -n "$failedpkgs" ]; then 
-  err "The bad package(s) are:"
-  err "$failedpkgs"
+  err $"The bad package(s) are:"
+  err $"$failedpkgs"
   debug "exiting..."
   exit 1
 fi
