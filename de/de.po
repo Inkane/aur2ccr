@@ -1,15 +1,18 @@
+# Fabian Kosmale <fakos@t-online.de>, 2012.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-02-26 00:31+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2012-02-26 10:55+0100\n"
+"Last-Translator: Fabian Kosmale <fakos@t-online.de>\n"
+"Language-Team: German <kde-i18n-de@kde.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Translate Toolkit 1.9.0\n"
+"X-Generator: Lokalize 1.4\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: #1
 msgid "Keyboard interrupt caught, cleaning up..."
@@ -81,7 +84,7 @@ msgstr "Öffne '$pkgname' PKGBUILD mit $EDITOR"
 
 #: #18
 msgid "Note: dependencies have not yet been checked, so the PKGBUILD"
-msgstr "Bemerkung: Die Abhängigkeiten wurden noch nicht überprüftt, "
+msgstr "Bemerkung: Die Abhängigkeiten wurden noch nicht überprüft, "
 
 #: #19
 msgid " may be changed after you modify it."
@@ -115,8 +118,8 @@ msgid ""
 "$pkgname dependency '$apkgname' already in CCR or repos as '$cpkgname', "
 "continuing"
 msgstr ""
-"$pkgname Abhängigkeit '$apkgname' ist bereit im CCR oder den Paketquellen "
-"als '$cpkgname', fahre fort"
+"$pkgname Abhängigkeit '$apkgname' ist bereit im CCR oder den Paketquellen als "
+"'$cpkgname', fahre fort"
 
 #: #26
 msgid "There seems to be a bad definition in '$namesconf'. Please fix this."
@@ -203,7 +206,7 @@ msgstr ""
 msgid ""
 "Running 'makepkg -s' on this package will fail, so we cannot test it now."
 msgstr ""
-"Das Anwenden von 'makepkg -s'auf dieses Paket wird fehlschlagen, deswegen "
+"Das Anwenden von 'makepkg -s' auf dieses Paket wird fehlschlagen, deswegen "
 "können wir es nicht testen. "
 
 #: #45
@@ -220,7 +223,7 @@ msgstr "$pkgpkg wurde nach $findir verschoben"
 
 #: #48
 msgid "$pkgpkg could not be moved to $findir"
-msgstr "$pkgpkg konnte nicht nach $findir verschobenwerden"
+msgstr "$pkgpkg konnte nicht nach $findir verschoben werden"
 
 #: #49
 msgid "Installing $pkgname..."
@@ -327,13 +330,14 @@ msgid ""
 "aur2ccr can attempt to rectify this by dividing the PKGBUILD up into "
 "multiple"
 msgstr ""
-"aur2ccr kann versuchen dieszu korrigieren in dem es den PKGBUILD in mehrere "
+"aur2ccr kann versuchen dies zu korrigieren in dem es den PKGBUILD in mehrere "
 "Zeilen teilt,"
 
 #: #74
 msgid ""
 "packages, but this is an experimantal feature and does not always work. If"
-msgstr "aber dies ist ein experimentelles Feature und funktioniert nicht immer."
+msgstr ""
+"aber dies ist ein experimentelles Feature und funktioniert nicht immer."
 
 #: #75
 msgid ""
@@ -457,7 +461,7 @@ msgstr "$1 ist keine gültige Option"
 
 #: #102
 msgid "You did not specify any packages to build"
-msgstr "Sie haben kein Paket zum Bauen angegegeben"
+msgstr "Sie haben kein Paket zum Bauen angegeben"
 
 #: #103
 msgid "There is nothing to do. Exiting..."
@@ -522,7 +526,7 @@ msgstr ""
 msgid ""
 "will work. Please thoroughly test all packages BEFORE uploading them to CCR."
 msgstr ""
-"dass die Pakete auchfunktionieren. Bitte teste alle Pakete sorgfältig VOR "
+"dass die Pakete auch funktionieren. Bitte teste alle Pakete sorgfältig VOR "
 "dem Hochladen ins CCR."
 
 #: #117
@@ -541,3 +545,4 @@ msgstr "$failedpkgs"
 #: #120
 msgid "sed failed while updating checksums"
 msgstr "sed schlug beim Aktualisieren der Prüfsummen fehl"
+
