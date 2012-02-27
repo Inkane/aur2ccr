@@ -3,6 +3,9 @@ Pull information from AUR or Arch repos, and make source
 packages that are ready for uploading to CCR.
 
 Todo: 
+add localization capabilities (Inkane);
+add -b (--batch) option to automatically answer as many questions \
+ as possible, and perform better when converting many packages;
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
 speed up the pacman-output-grepping function (with perl?);
