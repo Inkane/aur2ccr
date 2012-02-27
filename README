@@ -6,6 +6,7 @@ Todo:
 add localization capabilities (Inkane);
 add -b (--batch) option to automatically answer as many questions \
  as possible, and perform better when converting many packages;
+add -1 option to reset the pkgrel to 1;
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
 speed up the pacman-output-grepping function (with perl?);
