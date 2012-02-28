@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 # inspired by a bash script from Arch 
+# drop in replacement for getmirrors.sh
+import os
 import sys
 import urllib2
 import contextlib
@@ -11,55 +13,31 @@ class SmartDict(dict):
     def __missing__(self, key):
         return 'Any'
 
+# get enviroment variables
+try:
+    apconf = os.environ["apconf"]
+except KeyError:
+    apconf = "./archrepos.pacman.conf"
 
-valid_countries = ['Any',
- 'Australia',
- 'Belarus',
- 'Belgium',
- 'Brazil',
- 'Bulgaria',
- 'Canada',
- 'Chile',
- 'China',
- 'Colombia',
- 'Czech',
- 'Denmark',
- 'Estonia',
- 'Finland',
- 'France',
- 'Germany',
- 'Great Britain',
- 'Greece',
- 'Hungary',
- 'India',
- 'Indonesia',
- 'Ireland',
- 'Israel',
- 'Italy',
- 'Japan',
- 'Kazakhstan',
- 'Korea',
- 'Latvia',
- 'Luxembourg',
- 'Macedonia',
- 'Netherlands',
- 'New',
- 'Norway',
- 'Poland',
- 'Portugal',
- 'Romania',
- 'Russia',
- 'Singapore',
- 'Slovakia',
- 'South',
- 'Spain',
- 'Sweden',
- 'Switzerland',
- 'Taiwan',
- 'Turkey',
- 'Ukraine',
- 'United States',
- 'Uzbekistan']
+try:
+    quiet = (os.environ["quiet"] == "1")
+except KeyError:
+    quiet = False
+
+
+valid_countries = [
+ 'Australia', 'Belarus',  'Belgium',  'Brazil',
+ 'Bulgaria',  'Canada',  'Chile',  'China',
+ 'Colombia',  'Czech',  'Denmark',  'Estonia',
+ 'Finland',  'France',  'Germany',  'Great Britain',
+ 'Greece',  'Hungary',  'India',  'Indonesia',  'Ireland',
+ 'Israel',  'Italy',  'Japan',  'Kazakhstan',  'Korea',
+ 'Latvia',  'Luxembourg',  'Macedonia', 'Netherlands',
+ 'New Caledonia',  'Norway', 'Poland', 'Portugal', 'Romania',
+ 'Russia', 'Singapore', 'Slovakia', 'South', 'Spain',
+ 'Sweden', 'Switzerland', 'Taiwan', 'Turkey', 'Ukraine',
+ 'United States', 'Uzbekistan', 'Any'
+ ]
 alt_country_names = SmartDict() # store alternate country names
 alt_country_names["United Kingdom"] = "Great Britain"
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
@@ -82,6 +60,9 @@ def get_location():
 
 def main():
     country = get_location()
+    if quiet:
+        print country
+        sys.exit(0)
     #create the fitting url
     url = archlinux.format(country)
     print url
@@ -94,6 +75,7 @@ def main():
             if tmp:
                 # replace $arch with x86_64
                 mirror = re.sub("\$arch","x86_64",tmp.group(1))
+                break
     if mirror:
         print mirror
     else:
