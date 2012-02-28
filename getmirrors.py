@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # inspired by a bash script from Arch 
 # drop in replacement for getmirrors.sh
+from __future__ import print_function
+
 import os
 import sys
 import urllib2
@@ -44,7 +46,12 @@ duckduckgo = "https://duckduckgo.com/lite/?q=ip"
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
 def download(url):
-    webfile = urllib2.urlopen(url)
+    try:
+        webfile = urllib2.urlopen(url)
+    except (urllib2.URLError, urllib2.HTTPError):
+        print("Opening {} failed because of {}.".format(url,sys.exc_info()), 
+                sys.stderr)
+        sys.exit(2)
     return contextlib.closing(webfile)
 
 def get_location():
@@ -61,23 +68,23 @@ def get_location():
 def main():
     country = get_location()
     if quiet:
-        print country
+        print(country)
         sys.exit(0)
     #create the fitting url
     url = archlinux.format(country)
-    print url
     with download(url) as mirrorfile:
         for line in mirrorfile:
             if "is not one of the available choiches" in line:
-                print "Something went wrong"
+                # should never happen
+                print("Something went wrong in getmirrors.py. Please report this  error.", sys.stderr)
                 sys.exit(1)
             tmp = re.match("\#(Server.*)",line)
             if tmp:
                 # replace $arch with x86_64
                 mirror = re.sub("\$arch","x86_64",tmp.group(1))
-                break
+                break 
     if mirror:
-        print mirror
+        print(mirror)
     else:
         sys.exit(1)
 

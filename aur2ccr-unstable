@@ -552,12 +552,12 @@ checkaur() {
 
 setup() {  # perform some setup-related stuff interactively
   msg "In order to choose the best mirror, we need to know where you are."
-  d_country="$(quiet=1 getmirrors.sh)" d_country="${d_country-Any}"
+  d_country="$(quiet=1 getmirrors.py)" d_country="${d_country-Any}"
   msg -n "Please enter your country (leave blank to use '$d_country'): "
   read u_country
   [[ "$u_country" == "" ]] && u_country="$d_country"
   msg "Generating pacman configuration for $paconf..."
-  (sudo country="$u_country" apconf="$paconf" getmirrors.sh && msg "Done") || (err "Sorry, something went wrong."; err "Try again with a different country, or make sure you are connected to the internet.")
+  (sudo country="$u_country" apconf="$paconf" getmirrors.py && msg "Done") || (err "Sorry, something went wrong."; err "Try again with a different country, or make sure you are connected to the internet.")
   exit 0
 }
 
