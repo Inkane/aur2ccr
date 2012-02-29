@@ -80,14 +80,31 @@ def get_location():
         country = alt_country_names[country]
     return country
 
+def edit_conf(server):
+    regex = re.compile("Server =")
+    lines = ""
+    with open(apconf) as f:
+        for line in f:
+            if re.match(regex, line):
+                lines += server
+            else:
+                lines += line
+    with open(apconf, "w") as f:
+        f.write(lines)
+
 def main():
     country = get_location()
     if quiet:
         print(country)
         sys.exit(0)
     #create the fitting url
+    usercountry = raw_input("Please enter your country: (leave blank to use {}): ".format(country))
+
+    if usercountry:
+        country = usercountry
     url = archlinux.format(urllib2.quote(country))
     mirror = ""
+    print("Generating pacman configuration for {}".format(apconf))
     with download(url) as mirrorfile:
         for line in mirrorfile:
             if "is not one of the available choiches" in line:
@@ -103,6 +120,7 @@ def main():
         print(mirror)
     else:
         sys.exit(1)
+    edit_conf(mirror)
 
 if __name__ == "__main__":
     main()
