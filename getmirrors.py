@@ -90,7 +90,6 @@ def main():
     mirror = ""
     with download(url) as mirrorfile:
         for line in mirrorfile:
-            print(line)
             if "is not one of the available choiches" in line:
                 # should never happen
                 print("Something went wrong in getmirrors.py. Please report this error.", file=sys.stderr)
