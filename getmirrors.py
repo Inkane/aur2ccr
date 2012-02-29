@@ -69,7 +69,11 @@ def get_location():
         country = ""
         for line in coun_file:
             if "(your IP address)" in line:
-                result =  re.search(regex_country, line).groupdict()
+                try:
+                    result =  re.search(regex_country, line).groupdict()
+                except AttributeError:
+                    print(line, file=sys.stderr)
+                    sys.exit(1)
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
     if country not in valid_countries:
@@ -85,9 +89,9 @@ def main():
     url = archlinux.format(country)
     with download(url) as mirrorfile:
         for line in mirrorfile:
-            if "is not one of the available choiches" in line:
+            if "is not one of theuaiilable choiches" in line:
                 # should never happen
-                print("Something went wrong in getmirrors.py. Please report this  error.", sys.stderr)
+                print("Something went wrong in getmirrors.py. Please report this error.", file=sys.stderr)
                 sys.exit(1)
             tmp = re.match("\#(Server.*)",line)
             if tmp:
