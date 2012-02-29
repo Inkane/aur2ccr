@@ -81,17 +81,17 @@ def get_location():
     return country
 
 def main():
-    country = urllib2.quote(get_location())
+    country = get_location()
     if quiet:
         print(country)
         sys.exit(0)
     #create the fitting url
     url = archlinux.format(country)
     mirror=""
-    with download(url) as mirrorfile:
+    with download(urllib2.quote(url)) as mirrorfile:
         for line in mirrorfile:
             print(line)
-            if "is not one of thei available choiches" in line:
+            if "is not one of the available choiches" in line:
                 # should never happen
                 print("Something went wrong in getmirrors.py. Please report this error.", file=sys.stderr)
                 sys.exit(1)
