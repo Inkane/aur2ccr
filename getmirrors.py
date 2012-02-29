@@ -45,8 +45,8 @@ alt_country_names["United Kingdom"] = "Great Britain"
 
 # the webadresses of duckduckgo and arch linux 
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
-# American proxy
-#duckduckgo2 = "http://www.americanproxy.org/browse.php?u=http%3A%2F%2Fduckduckgo.com%2Flite%2F%3Fq%3Dip&b=0" 
+# American proxy, will be removed when it works
+duckduckgo2 = "http://www.americanproxy.org/browse.php?u=http%3A%2F%2Fduckduckgo.com%2Flite%2F%3Fq%3Dip&b=0" 
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
 def download(url):
@@ -63,7 +63,7 @@ def get_location():
     regex_country = re.compile(r"""
             ,\s # a comma followed by whitespace
               ((?P<oneword>([a-zA-Z])+?)\.) # one-word countries
-            | (?P<twoword>(([a-zA-Z])+?\s[a-zA-Z]+))((\s([,(]))) #two-word countries
+            | (?P<twoword>(([a-zA-Z])+?\s[a-zA-Z]+))((\s([,(]))|\.) #two-word countries
             """, re.VERBOSE)
     with download(duckduckgo) as coun_file:
         country = ""
@@ -81,15 +81,17 @@ def get_location():
     return country
 
 def main():
-    country = get_location()
+    country = urllib2.quote(get_location())
     if quiet:
         print(country)
         sys.exit(0)
     #create the fitting url
     url = archlinux.format(country)
+    mirror=""
     with download(url) as mirrorfile:
         for line in mirrorfile:
-            if "is not one of theuaiilable choiches" in line:
+            print(line)
+            if "is not one of thei available choiches" in line:
                 # should never happen
                 print("Something went wrong in getmirrors.py. Please report this error.", file=sys.stderr)
                 sys.exit(1)
