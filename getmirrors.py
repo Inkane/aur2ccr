@@ -86,9 +86,9 @@ def main():
         print(country)
         sys.exit(0)
     #create the fitting url
-    url = archlinux.format(country)
-    mirror=""
-    with download(urllib2.quote(url)) as mirrorfile:
+    url = archlinux.format(urllib2.quote(country))
+    mirror = ""
+    with download(url) as mirrorfile:
         for line in mirrorfile:
             print(line)
             if "is not one of the available choiches" in line:
