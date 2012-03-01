@@ -551,7 +551,7 @@ checkaur() {
 }
 
 setup() {  # perform some setup-related stuff interactively
-  sudo apconf=$apconf ./getmirrors.py # remove ./ in final version
+  sudo paconf=$paconf ./getmirrors.py # remove ./ in final version
   exit 0
 }
 

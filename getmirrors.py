@@ -17,9 +17,9 @@ class SmartDict(dict):
 
 # get enviroment variables
 try:
-    apconf = os.environ["apconf"]
+    paconf = os.environ["paconf"]
 except KeyError:
-    apconf = "./archrepos.pacman.conf"
+    paconf = "./archrepos.pacman.conf"
 
 try:
     quiet = (os.environ["quiet"] == "1")
@@ -81,15 +81,12 @@ def get_location():
     return country
 
 def edit_conf(server):
-    regex = re.compile("Server =")
+    regex = re.compile("Server = .*\$")
     lines = ""
-    with open(apconf) as f:
+    with open(paconf) as f:
         for line in f:
-            if re.match(regex, line):
-                lines += server
-            else:
-                lines += line
-    with open(apconf, "w") as f:
+            re.sub(regex, line, server)
+    with open(paconf, "w") as f:
         f.write(lines)
 
 def main():
@@ -104,7 +101,7 @@ def main():
         country = usercountry
     url = archlinux.format(urllib2.quote(country))
     mirror = ""
-    print("Generating pacman configuration for {}".format(apconf))
+    print("Generating pacman configuration for {}".format(paconf))
     with download(url) as mirrorfile:
         for line in mirrorfile:
             if "is not one of the available choiches" in line:
