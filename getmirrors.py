@@ -10,7 +10,7 @@ import contextlib
 import re
 import fileinput
 
-# a trick to get a mirror if the user lives in an unknown country
+# needed for a trick to get a mirror if the user lives in an unknown country
 class SmartDict(dict):
     """return 'Any' as fallback if country is not in list"""
 
@@ -23,6 +23,7 @@ try:
 except KeyError:
     paconf = "./archrepos.pacman.conf"
 
+# future versions should use a commandline argument
 try:
     quiet = (os.environ["quiet"] == "1")
 except KeyError:
@@ -38,7 +39,7 @@ valid_countries = [
  'Israel',  'Italy',  'Japan',  'Kazakhstan',  'Korea',
  'Latvia',  'Luxembourg',  'Macedonia', 'Netherlands',
  'New Caledonia',  'Norway', 'Poland', 'Portugal', 'Romania',
- 'Russia', 'Singapore', 'Slovakia', 'South', 'Spain',
+ 'Russia', 'Singapore', 'Slovakia', 'South Korea', 'Spain',
  'Sweden', 'Switzerland', 'Taiwan', 'Turkey', 'Ukraine',
  'United States', 'Uzbekistan', 'Any'
  ]
@@ -50,6 +51,7 @@ duckduckgo = "https://duckduckgo.com/lite/?q=ip"
 # American proxy, will be removed when it works
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
+
 def download(url):
     # downloads a file and returns a file like object if successful
     try:
@@ -59,6 +61,7 @@ def download(url):
                 sys.stderr)
         sys.exit(2)
     return contextlib.closing(webfile)
+
 
 def get_location():
     regex_country = re.compile(r"""
@@ -73,13 +76,16 @@ def get_location():
                 try:
                     result =  re.search(regex_country, line).groupdict()
                 except AttributeError:
+                    # this should never fail until the duckduckgo website changes
                     print(line, file=sys.stderr)
                     sys.exit(1)
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
+    # test if their is a mirror list for the country
     if country not in valid_countries:
         country = alt_country_names[country]
     return country
+
 
 def edit_conf(server, file=paconf):
     regex = re.compile("Server = .*\$")
@@ -87,21 +93,21 @@ def edit_conf(server, file=paconf):
         if re.match(regex, line):
             # if the line contains Server, replace it with the new server
             print(server)
-        else:
-            print(line)
+        else: # else don't change anything
+            print(line, end="")
 
 
 
 def main():
     country = get_location()
-    if quiet:
-        print(country)
-        sys.exit(0)
-    #create the fitting url
-    usercountry = raw_input("Please enter your country: (leave blank to use {}): ".format(country))
 
-    if usercountry:
-        country = usercountry
+    # Give the user the chance to change the mirror if not in quiet mode
+    if not quiet:
+        usercountry = raw_input("Please enter your country: (leave blank to use {}): ".format(country))
+        if usercountry:
+            country = usercountry
+
+    #create the fitting url
     url = archlinux.format(urllib2.quote(country))
     mirror = ""
     print("Generating pacman configuration for {}".format(paconf))
