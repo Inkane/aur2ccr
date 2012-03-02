@@ -12,6 +12,7 @@ fix twice-compile CCR depends by uniq'ing needeps array;
 keep track of successful packages, and do not repeat them in a session;
 keep track of bad packages, and do not repeat them in a session;
 change logerr() to use a tmp file, delete it in clean() and at end;
+check for python-blah when a python2-blah dependency is found;
 get aur2ccr ready for an eventual switch to akabei;
 improve function for grabbing package info from Arch repos (perl); 
 speed up the pacman-output-grepping function (with perl?);
