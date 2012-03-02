@@ -16,6 +16,7 @@
 
 # i19n && l10n
 TEXTDOMAIN=aur2ccr-unstable
+. gettext.sh
 
 # internal settings - you can modify some of these in aur2ccr.conf
 pname="aur2ccr"         pver="0.7"
@@ -691,7 +692,8 @@ popopts() {  # populate variables, enumerate options and arguments
   shift
 done
 debug "args is $args"
-[[ -z "$packages" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err $"You did not specify any packages to build"; err $"There is nothing to do. Exiting..."; exit 0) && exit 1
+[[ -z "$packages" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err $(
+eval_gettext "You did not specify any packages to build"); err $"There is nothing to do. Exiting..."; exit 0) && exit 1
 }
 
 # main()
