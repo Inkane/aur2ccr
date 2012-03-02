@@ -8,7 +8,9 @@ import sys
 import urllib2
 import contextlib
 import re
+import fileinput
 
+# a trick to get a mirror if the user lives in an unknown country
 class SmartDict(dict):
     """return 'Any' as fallback if country is not in list"""
 
@@ -46,7 +48,6 @@ alt_country_names["United Kingdom"] = "Great Britain"
 # the webadresses of duckduckgo and arch linux 
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
 # American proxy, will be removed when it works
-duckduckgo2 = "http://www.americanproxy.org/browse.php?u=http%3A%2F%2Fduckduckgo.com%2Flite%2F%3Fq%3Dip&b=0" 
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
 def download(url):
@@ -80,14 +81,16 @@ def get_location():
         country = alt_country_names[country]
     return country
 
-def edit_conf(server):
+def edit_conf(server, file=paconf):
     regex = re.compile("Server = .*\$")
-    lines = ""
-    with open(paconf) as f:
-        for line in f:
-            re.sub(regex, line, server)
-    with open(paconf, "w") as f:
-        f.write(lines)
+    for line in fileinput.input(file, inplace=1):
+        if re.match(regex, line):
+            # if the line contains Server, replace it with the new server
+            print(server)
+        else:
+            print(line)
+
+
 
 def main():
     country = get_location()
