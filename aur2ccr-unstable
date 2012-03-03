@@ -31,7 +31,147 @@ WHITE='\e[1;37m'        ENDCOLOR='\e[0m'
 programs=( abs autoconf automake bison ccr cmake curl ed flex gawk gcc jshon libtool m4 make makepkg patch pacman getmirrors.sh )
 
 # remove ./ in final
+# includes all the functions for user interaction
 source /home/fabian/pkgbuilds/aur2ccr/messages.sh
+
+
+
+setup() {  # perform some setup-related stuff interactively
+  sudo paconf=$paconf ./getmirrors.py # remove ./ in final version
+  exit 0
+}
+
+usage() {
+  debug "usage('$@')"
+  echo "Usage: $(basename $0) [OPTIONS] [PACKAGES]" # is this better than $0?
+  echo "Create CCR-ready source packages from packages in AUR or Arch repos"
+  echo "Example: $(basename $0) twisted" ;  echo 
+  echo "General: "
+  echo "  -m <maintainer>	  add maintainer information to each PKGBUILD before building"
+  echo "  (--maintainer <m...>)   <maintainer> should be in the form 'My Name (nick) <me@example.com>'"
+  echo "  -e, --edit		  edit the PKGBUILD for each package with \$EDITOR before building"
+  echo "  -c, --consolidate	  move all CCR source packages into the working directory"
+  echo "  -i, --install		  install packages that build successfully, in order to test them" ; echo
+  echo "Advanced: "
+  echo "  -f, --from-src <file>   create a CCR source package from source package <file>"
+  echo "  -u, --from-url <URL>	  ... or from an AUR/CCR-compatible source package at <URL>"
+  echo "  -d, --from-dir <dir>	  ... or from a PKGBUILD and (optional) other files in <dir>"
+  echo "  -C, --cd <newdir>	  use <newdir> as the working directory instead of the current dir"
+  echo "  -t, --temp		  use '$tmpdir' as the build directory instead of the current dir"
+  echo "        		  (all finished src packages will be moved into the working dir, like -c)"
+  echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>" ; echo
+  echo "Other: "
+  echo "  -s, --setup		  perform setup-related tasks, such as choosing the best Arch mirror"
+  echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributer: "
+  echo "        		  'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
+  echo "  -h, --help		  display this help and exit"
+  echo "  -v, --version		  print version information and exit" ; echo 
+  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]" ; echo 
+  echo "Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>"
+  echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>" ; debug "exiting..."
+  exit 0
+}
+
+# helper function for popopt
+validate_option() {
+  if [[ "$1" == "" ]]; then
+    return 127
+  elif [[ $(echo "$1" | cut -c 1) == "-" ]]; then
+    err "option parameter must not start with - "
+    exit 1
+  else
+    return 0
+  fi
+}
+
+# global variable where the package names are stored
+packages=""
+
+popopts() {  # populate variables, enumerate options and arguments
+  debug "popopts('$@')"
+  while [[ "$1" != "" ]];  do
+    debug "current option $1"
+    case "$1" in
+      "-m"|"--maintainer") shift
+        if validate_option "$1";  then
+          maintainer="$1";
+        else
+          err "missing maintainer" && exit 2;
+        fi;;
+      "-e"|"--edit") edit=1;;
+      "-c"|"--consolidate") consolidate=1;;
+      "-f"|"--from-src") shift
+        if validate_option "$1"; then
+          file="$1";
+        else
+          err "missing source file" && exit 3;
+        fi;;
+      "-u"|"--from-url") shift
+        if validate_option "$1" ; then
+          url="$1";
+        else
+          err "missing url" && exit 4;
+        fi;;
+      "-d"|"--from-dir") shift
+        if validate_option "$1"; then
+          pkgdir="$1"
+        else
+          err "missing directory" && exit 5;
+        fi;;
+      "-C"|"--cd") shift
+        if validate_option "$1"; then
+          startdir="$1" finddir="$1"
+        else
+          err "missing directory" && exit 6;
+        fi;;
+      "-t"|"--temp") startdir="$tmpdir"
+        consolidate=1;;
+      "-l"|"--log") shift
+        if validate_option "$1"; then
+          logfile="$1"
+          touch "$logfile" >&2> /dev/null
+          if ! test -w "$logfile"; then
+            err "specified log file '$logfile' is not writable"
+            exit 8
+          fi;
+          echo >> "$logfile"
+          echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
+          echo >> "$logfile"
+        else
+          err "missing logfile" && exit 8
+        fi;;
+      "-i"|"--install") install=1;;
+      "-s"|"--setup") setup;;
+      "-h"|"--help") usage;;
+      "-v"|"--version") echo "$pname $pver" && exit 0;;
+      "-a"|"--addad") addad=1;;
+      # match every other option starting with -, followed by two or more chars
+      -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
+      # split the option string, add a - before every option
+      argops=$(echo "$1"|echo $(fold -w1)) stmp=""
+      for char in $noargops; do
+        case "$char" in
+          "m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
+          *) argops=${argops:1}&&stmp=${stmp}" "${char}
+        esac
+      done
+      debug start $stmp; debug $argops end
+      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
+      debug "tmp=" $tmp
+      set -- $tmp "${@:2}"
+      debug "new options" "$@"
+      continue  ;;
+      # package names won't start with - or --, so we can catch invalid options
+      -[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
+      *) packages="$packages $1";;
+    esac
+  shift
+done
+debug "args is $args"
+[[ -z "$packages" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err "You did not specify any packages to build"; err "There is nothing to do. Exiting..."; exit 0) && exit 1
+}
+
+
 
 # other functions
 clean() {  # clean up temp files
@@ -212,140 +352,6 @@ source /home/fabian/pkgbuilds/aur2ccr/makeccrpkg.sh
 
 source /home/fabian/pkgbuilds/aur2ccr/search_check.sh
 
-setup() {  # perform some setup-related stuff interactively
-  sudo paconf=$paconf ./getmirrors.py # remove ./ in final version
-  exit 0
-}
-
-usage() {
-  debug "usage('$@')"
-  echo "Usage: $(basename $0) [OPTIONS] [PACKAGES]" # is this better than $0?
-  echo "Create CCR-ready source packages from packages in AUR or Arch repos"
-  echo "Example: $(basename $0) twisted" ;  echo 
-  echo "General: "
-  echo "  -m <maintainer>	  add maintainer information to each PKGBUILD before building"
-  echo "  (--maintainer <m...>)   <maintainer> should be in the form 'My Name (nick) <me@example.com>'"
-  echo "  -e, --edit		  edit the PKGBUILD for each package with \$EDITOR before building"
-  echo "  -c, --consolidate	  move all CCR source packages into the working directory"
-  echo "  -i, --install		  install packages that build successfully, in order to test them" ; echo
-  echo "Advanced: "
-  echo "  -f, --from-src <file>   create a CCR source package from source package <file>"
-  echo "  -u, --from-url <URL>	  ... or from an AUR/CCR-compatible source package at <URL>"
-  echo "  -d, --from-dir <dir>	  ... or from a PKGBUILD and (optional) other files in <dir>"
-  echo "  -C, --cd <newdir>	  use <newdir> as the working directory instead of the current dir"
-  echo "  -t, --temp		  use '$tmpdir' as the build directory instead of the current dir"
-  echo "        		  (all finished src packages will be moved into the working dir, like -c)"
-  echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>" ; echo
-  echo "Other: "
-  echo "  -s, --setup		  perform setup-related tasks, such as choosing the best Arch mirror"
-  echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributer: "
-  echo "        		  'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
-  echo "  -h, --help		  display this help and exit"
-  echo "  -v, --version		  print version information and exit" ; echo 
-  echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]" ; echo 
-  echo "Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>"
-  echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>" ; debug "exiting..."
-  exit 0
-}
-
-# helper function for popopt
-validate_option() {
-  if [[ "$1" == "" ]]; then
-    return 127
-  elif [[ $(echo "$1" | cut -c 1) == "-" ]]; then
-    err "option parameter must not start with - "
-    exit 1
-  else
-    return 0
-  fi
-}
-
-# global variable where the package names are stored
-packages=""
-
-popopts() {  # populate variables, enumerate options and arguments
-  debug "popopts('$@')"
-  while [[ "$1" != "" ]];  do
-    debug "current option $1"
-    case "$1" in
-      "-m"|"--maintainer") shift
-        if validate_option "$1";  then
-          maintainer="$1";
-        else
-          err "missing maintainer" && exit 2;
-        fi;;
-      "-e"|"--edit") edit=1;;
-      "-c"|"--consolidate") consolidate=1;;
-      "-f"|"--from-src") shift
-        if validate_option "$1"; then
-          file="$1";
-        else
-          err "missing source file" && exit 3;
-        fi;;
-      "-u"|"--from-url") shift
-        if validate_option "$1" ; then
-          url="$1";
-        else
-          err "missing url" && exit 4;
-        fi;;
-      "-d"|"--from-dir") shift
-        if validate_option "$1"; then
-          pkgdir="$1"
-        else
-          err "missing directory" && exit 5;
-        fi;;
-      "-C"|"--cd") shift
-        if validate_option "$1"; then
-          startdir="$1" finddir="$1"
-        else
-          err "missing directory" && exit 6;
-        fi;;
-      "-t"|"--temp") startdir="$tmpdir"
-        consolidate=1;;
-      "-l"|"--log") shift
-        if validate_option "$1"; then
-          logfile="$1"
-          touch "$logfile" >&2> /dev/null
-          if ! test -w "$logfile"; then
-            err "specified log file '$logfile' is not writable"
-            exit 8
-          fi;
-          echo >> "$logfile"
-          echo "+++++  aur2ccr logfile, started $(date)  +++++" >> "$logfile"
-          echo >> "$logfile"
-        else
-          err "missing logfile" && exit 8
-        fi;;
-      "-i"|"--install") install=1;;
-      "-s"|"--setup") setup;;
-      "-h"|"--help") usage;;
-      "-v"|"--version") echo "$pname $pver" && exit 0;;
-      "-a"|"--addad") addad=1;;
-      # match every other option starting with -, followed by two or more chars
-      -[a-z][a-z]*) # replace -foo therest with -f -o -o therest
-      # split the option string, add a - before every option
-      argops=$(echo "$1"|echo $(fold -w1)) stmp=""
-      for char in $noargops; do
-        case "$char" in
-          "m"|"f"|"u"|"d"|"C"|"l") debug "$char" && break;;
-          *) argops=${argops:1}&&stmp=${stmp}" "${char}
-        esac
-      done
-      debug start $stmp; debug $argops end
-      local tmp=$(echo "$1"|echo $(fold -w1)|sed -e 's/ / -/g'|cut -c2- && shift)
-      debug "tmp=" $tmp
-      set -- $tmp "${@:2}"
-      debug "new options" "$@"
-      continue  ;;
-      # package names won't start with - or --, so we can catch invalid options
-      -[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
-      *) packages="$packages $1";;
-    esac
-  shift
-done
-debug "args is $args"
-[[ -z "$packages" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err "You did not specify any packages to build"; err "There is nothing to do. Exiting..."; exit 0) && exit 1
-}
 
 # main()
 debug "main('$@')"
