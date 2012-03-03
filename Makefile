@@ -7,7 +7,7 @@ others = aur2ccr.8 Makefile README
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
-	sh getmirrors.sh
+	quiet=1 python2 getmirrors.py
 	@echo "run 'aur2ccr -s' if the above location is incorrect"
 
 man: aur2ccr.8.gz $(others)
