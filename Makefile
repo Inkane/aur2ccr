@@ -8,7 +8,7 @@ allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
 	quiet=1 python2 getmirrors.py
-	@echo "run 'aur2ccr -s' if the above location is incorrect"
+	@echo "run 'aur2ccr -s' if the above server is incorrect"
 
 man: aur2ccr.8.gz $(others)
 
@@ -32,7 +32,7 @@ install-man: # 'make install' calls this, so only do 'make install-man' if all y
 aur2ccr.8.gz : $(others)
 	gzip -c aur2ccr.8 > aur2ccr.8.gz
 
-bundle: aur2ccr.txz.sh $(allfiles) # This is for the distributer ONLY, you need my 'bundle>=0.9' to use it.
+bundle: aur2ccr.txz.sh $(allfiles) # This is for the distributer only, you need my 'bundle>=0.9' to use it.
 
 aur2ccr.txz.sh : $(allfiles)
 	bundle -s -x * > aur2ccr.txz.sh
