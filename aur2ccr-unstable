@@ -551,7 +551,7 @@ checkaur() {
 }
 
 setup() {  # perform some setup-related stuff interactively
-  sudo paconf=$paconf getmirrors.py # getmirrors.py must exist in PATH
+  sudo paconf="$paconf" getmirrors.py # getmirrors.py must exist in PATH
   exit 0
 }
 
