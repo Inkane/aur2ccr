@@ -3,7 +3,10 @@
 # reimplementing edit_package.sh
 from __future__ import print_function
 from __future__ import unicode_literals
+import subprocess
 import logging
+import shutil
+import tempfile
 
 import re
 import fileinput
@@ -22,6 +25,16 @@ def addmaintainer(pkgbuild, maintainer):
         else:
             print(line, end="")
 
-def update_uchksums(pkbuild):
+def update_chksums(pkgbuild):
     # update the checksum array of a PKGBUILD
-    pass
+    try:
+        new_checksums = subprocess.check_output(["makepg", "-gf", pkgbuild])
+    except subprocess.CalledProcessError:
+        # handle error
+        pass
+    # replace the old checksums
+    regex = re.compile("*sums=")
+    with open(pkgbuild) as f, tempfile.NamedTemporaryFile(delete=False) as tmpf:
+        for line in f:
+            if re.match(regex, 
+    return new_checksums
