@@ -2,23 +2,10 @@ aur2ccr -
 Pull information from AUR or Arch repos, and make source 
 packages that are ready for uploading to CCR.
 
-Todo: 
-add localization capabilities (Inkane);
-add -b (--batch) option to automatically answer as many questions \
- as possible, and perform better when converting many packages;
-add -1 option to reset the pkgrel to 1;
-change output functions to write time instead of ==> when sending to log;
-fix twice-compile CCR depends by uniq'ing needeps array;
 keep track of successful packages, and do not repeat them in a session;
 keep track of bad packages, and do not repeat them in a session;
 change logerr() to use a tmp file, delete it in clean() and at end;
 check for python-blah when a python2-blah dependency is found;
-get aur2ccr ready for an eventual switch to akabei;
-improve function for grabbing package info from Arch repos (perl); 
-speed up the pacman-output-grepping function (with perl?);
-perpetual code cleanup;
-find and fix bugs!
-
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
 
 
