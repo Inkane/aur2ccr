@@ -1,0 +1,10 @@
+# Maintainer "your_name your_sirname <name@example.com>"
+
+depends = ()
+build () {
+	echo "Hi"
+}
+
+install () {
+	echo "By"
+}

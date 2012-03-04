@@ -1,0 +1,12 @@
+# Maintainer: your_name your_sirname <name@example.com>
+# Contributor Foo Bar <foo@bar.com>
+# Contributor Bar Foo <bar@foo.org>
+
+depends = ()
+build () {
+	echo "Hi"
+}
+
+install () {
+	echo "By"
+}
