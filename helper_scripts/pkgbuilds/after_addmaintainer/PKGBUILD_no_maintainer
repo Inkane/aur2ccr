@@ -1,5 +1,5 @@
-# Maintainer Unittest <test@example.com>
-# Contributor Foo Bar <barfoo@info>
+# Maintainer: Unittest <test@example.com>
+# Contributor: Foo Bar <barfoo@info>
 # not maintained anymore
 
 pkgname=haskell-monadcatchio-mtl

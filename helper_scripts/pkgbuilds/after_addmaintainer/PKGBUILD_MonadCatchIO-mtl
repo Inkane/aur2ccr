@@ -1,4 +1,4 @@
-# Maintainer Unittest <test@example.com>
+# Maintainer: Unittest <test@example.com>
 # custom variables
 _hkgname=MonadCatchIO-mtl
 _licensefile=LICENSE
