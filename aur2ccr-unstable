@@ -257,6 +257,7 @@ isinstalled() { # check if $1 is already installed
 
 getneedeps() { # get the deps we need from CCR, return in $needeps
   debug "getneedeps($@)"
+  needeps=
   for dep in "${depends[@]}"; do
     if isinrepos $dep; then
       needeps="$needeps"
