@@ -4,6 +4,7 @@ packages that are ready for uploading to CCR.
 
 Todo: 
 add localization capabilities (Inkane);
+add -r (--clean or --remove) option to rm src/* and pkg/* files;
 add -b (--batch) option to automatically answer as many questions \
  as possible, and perform better when converting many packages;
 add -1 option to reset the pkgrel to 1;
