@@ -36,5 +36,6 @@ def update_chksums(pkgbuild):
     regex = re.compile("*sums=")
     with open(pkgbuild) as f, tempfile.NamedTemporaryFile(delete=False) as tmpf:
         for line in f:
-            if re.match(regex, 
+            #if re.match(regex, 
+            pass
     return new_checksums
