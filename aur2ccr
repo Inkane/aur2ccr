@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.7
+# aur2ccr - version 0.7.2
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # -- CREDITS --
@@ -15,7 +15,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.7"
+pname="aur2ccr"         pver="0.7.2"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -341,11 +341,11 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down a littl
       if isinaur $pkg; then
         debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (isdepend=1 makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       elif isinarchr $pkg; then
         msg "'$pkg' found in the Arch repos..."; debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (isdepend=1 makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       else
         err "Sorry, dependency '$pkg' cannot be found."; err "Without this dependency, $pkgname cannot be built"; logerr $pkg
         return 1
@@ -408,7 +408,18 @@ makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src pack
   wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz" || (err "There was an error while trying to download the package."; logerr $pkgname; exit 1) || return 1
   (tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz") || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
   cd "$pkgname"
-  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+  if [[ "$isdepend" == 1 ]]; then
+    installb=$install
+    install=1
+  fi
+  if dotherest "$pkgname"; then
+    install=$installb
+    return 0
+  else
+    install=$installb
+    logerr $pkgname
+    return 1
+  fi
 }
 
 makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-ready src package
@@ -437,7 +448,18 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
     return 1
   fi  #  ^ this is a quick fix ^
   cd "$pkgname"
-  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+  if [[ "$isdepend" == 1 ]]; then
+    installb=$install
+    install=1
+  fi
+  if dotherest "$pkgname"; then
+    install=$installb
+    return 0
+  else
+    install=$installb
+    logerr $pkgname
+    return 1
+  fi
 }
   
 makeccrpkg_u() {  # make a package from a URL
@@ -604,6 +626,9 @@ validate_option() {
   fi
 }
 
+# global variable where the package names are stored
+packages=""
+
 popopts() {  # populate variables, enumerate options and arguments
   debug "popopts('$@')"
   while [[ "$1" != "" ]];  do
@@ -680,11 +705,12 @@ popopts() {  # populate variables, enumerate options and arguments
       continue  ;;
       # package names won't start with - or --, so we can catch invalid options
       -[a-z]|--[a-z]*) err "$1 is not a valid option" && exit 9;;
-      *) args="$args $1";;
+      *) packages="$packages $1";;
     esac
   shift
 done
-[[ -z "$args" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err "You did not specify any packages to build"; err "There is nothing to do. Exiting..."; exit 0) && exit 1
+debug "args is $args"
+[[ -z "$packages" && -z "$url" && -z "$file" && -z "$pkgdir" ]] && (err "You did not specify any packages to build"; err "There is nothing to do. Exiting..."; exit 0) && exit 1
 }
 
 # main()
@@ -742,9 +768,10 @@ consolidate="${consolidate-0}"           edit="${edit-0}" addad="${addad-0}"
 popopts "$@"
 debug "setting trap"; trap clean INT  # trap keyboard interrupts (^C), in order to clean up temp files
 debug "entering 'for' loop"
-for pkgname in $args; do
+for pkgname in $packages; do
   debug "checking $pkgname"
-  echo "$1" | grep -q '^..' || (err "Package names must be at least two characters in length"; exit 1) || exit 1 # if the package name is not at least 2 chars, lots of stuff wiull fail.
+  debug "$pkgname has to be at least two characters long"
+  echo "$pkgname" | grep -q '^..' || (err "Package names must be at least two characters in length"; exit 1) || exit 1 # if the package name is not at least 2 chars, lots of stuff wiull fail.
   if isinccr $pkgname; then
     msg "$pkgname is already in CCR or main Chakra repos."
     msg -n "Continue anyway? [y/N] "
