@@ -1,0 +1,20 @@
+aur2ccr todo list:
+
+write a PKGBUILD parser to simplify everything (Inkane);
+add localization capabilities (Inkane);
+add -r (--clean or --remove) option to rm src/* and pkg/* files;
+add -b (--batch) option to automatically answer as many questions as possible, and perform better when converting many packages;
+add -1 option to reset the pkgrel to 1;
+change output functions to write time instead of '==>' when sending to log;
+fix twice-compile CCR depends by uniq'ing needeps array;
+keep track of successful packages, and do not repeat them in a session;
+keep track of bad packages, and do not repeat them in a session;
+keep track of installed dependencies, and remove them when done;
+change logerr() to use a global variables once the script is in python;
+check for python-blah when a python2-blah dependency is found;
+get aur2ccr ready for an eventual switch to akabei;
+improve function for grabbing package info from Arch repos; 
+speed up the pacman-output-grepping function;
+switch entire script to python;
+add a simple gui for the n00bs (long-term);
+find and fix bugs!
