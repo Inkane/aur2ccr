@@ -45,6 +45,7 @@ valid_countries = [
  ]
 alt_country_names = SmartDict() # store alternate country names
 alt_country_names["United Kingdom"] = "Great Britain"
+alt_country_names["Argentina"] = "Brazil"
 
 # the webadresses of duckduckgo and arch linux 
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
