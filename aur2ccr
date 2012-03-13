@@ -342,11 +342,11 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down a littl
       if isinaur $pkg; then
         debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (isdepend=1 makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       elif isinarchr $pkg; then
         msg "'$pkg' found in the Arch repos..."; debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (isdepend=1 makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       else
         err "Sorry, dependency '$pkg' cannot be found."; err "Without this dependency, $pkgname cannot be built"; logerr $pkg
         return 1
