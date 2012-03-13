@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.7
+# aur2ccr - version 0.7.2
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # -- CREDITS --
@@ -15,7 +15,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.7"
+pname="aur2ccr"         pver="0.7.2"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -409,7 +409,18 @@ makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src pack
   wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz" || (err "There was an error while trying to download the package."; logerr $pkgname; exit 1) || return 1
   (tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz") || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
   cd "$pkgname"
-  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+  if [[ "$isdepend" == 1 ]]; then
+    installb=$install
+    install=1
+  fi
+  if dotherest "$pkgname"; then
+    install=$installb
+    return 0
+  else
+    install=$installb
+    logerr $pkgname
+    return 1
+  fi
 }
 
 makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-ready src package
@@ -438,7 +449,18 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
     return 1
   fi  #  ^ this is a quick fix ^
   cd "$pkgname"
-  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
+  if [[ "$isdepend" == 1 ]]; then
+    installb=$install
+    install=1
+  fi
+  if dotherest "$pkgname"; then
+    install=$installb
+    return 0
+  else
+    install=$installb
+    logerr $pkgname
+    return 1
+  fi
 }
   
 makeccrpkg_u() {  # make a package from a URL
