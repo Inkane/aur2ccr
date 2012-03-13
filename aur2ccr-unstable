@@ -99,6 +99,10 @@ popopts() {  # populate variables, enumerate options and arguments
           err "missing maintainer" && exit 2;
         fi;;
       "-e"|"--edit") edit=1;;
+<<<<<<< HEAD
+=======
+      "-1"|"--reset-version") reset_version=1
+>>>>>>> testing
       "-c"|"--consolidate") consolidate=1;;
       "-f"|"--from-src") shift
         if validate_option "$1"; then
@@ -404,6 +408,7 @@ tmpdir="${tmpdir-/tmp}"                  namesconf="${namesconf-names.conf}"
 apconf="${apconf-archrepos.pacman.conf}" acconf="${acconf-aur2ccr.conf}" 
 startdir="${startdir-$(pwd)}"            findir="${findir-$(pwd)}" 
 consolidate="${consolidate-0}"           edit="${edit-0}" addad="${addad-0}" 
+reset_version="${reset_version-0}"
 [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]] && usage
 popopts "$@"
 debug "setting trap"; trap clean INT  # trap keyboard interrupts (^C), in order to clean up temp files

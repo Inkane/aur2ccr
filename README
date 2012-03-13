@@ -2,8 +2,10 @@ aur2ccr -
 Pull information from AUR or Arch repos, and make source 
 packages that are ready for uploading to CCR.
 
+add -r (--clean or --remove) option to rm src/* and pkg/* files;
 keep track of successful packages, and do not repeat them in a session;
 keep track of bad packages, and do not repeat them in a session;
+keep track of installed dependencies, and remove them when done;
 change logerr() to use a tmp file, delete it in clean() and at end;
 check for python-blah when a python2-blah dependency is found;
 This script uses the information on converting Arch/AUR packages to CCR source packages from http://chakra-linux.org/wiki/index.php/How_to_upload_a_package_to_CCR_when_it_exists_on_Arch_or_Aur
@@ -22,8 +24,3 @@ Installation for aur2ccr is simple. Just run:
 This will install the script itself, the needed configuration files, and
 the aur2ccr(8) man page. There is no need for a ./configure, as the script
 only works on one platform: Chakra Linux.
-
-In order to use the script, you may need to run: 
-  sudo pacman -Sy abs awk base-devel ccr packer sed
-This will install all the programs required by the script, as well as a 
-few tools that are needed to compile most packages. 
