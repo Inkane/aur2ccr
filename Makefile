@@ -3,7 +3,7 @@ manpages = aur2ccr.8.gz
 binfiles = aur2ccr getmirrors.sh
 unstable = aur2ccr-unstable
 configs = names.conf aur2ccr.conf archrepos.pacman.conf
-others = aur2ccr.8 Makefile README
+others = aur2ccr.8 Makefile README.md TODO
 allfiles = $(binfiles) $(configs) $(manpages) $(others)
 
 all: man $(allfiles)
