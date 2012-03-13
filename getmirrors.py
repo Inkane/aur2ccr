@@ -79,7 +79,8 @@ def get_location():
                 except AttributeError:
                     # this should never fail until the duckduckgo website changes
                     print(line, file=sys.stderr)
-                    sys.exit(1)
+                    print("Oh no! duckduckgo doesn't know where you live!\nWe use a generic option now. For better performance you should run aur2ccr --setup\n")
+                    return "Any"
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
     # test if their is a mirror list for the country
