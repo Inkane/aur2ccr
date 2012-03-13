@@ -1,5 +1,5 @@
 #!/bin/bash
-# aur2ccr - version 0.7.2
+# aur2ccr - version 0.7
 # Pull information from AUR or Arch repos, and make source packages that are ready for uploading to CCR.
 # Usage: aur2ccr [OPTIONS] [PACKAGES]
 # -- CREDITS --
@@ -15,7 +15,7 @@
 #  ...and all others who have used aur2ccr or helped in some other way.
 
 # internal settings - you can modify some of these in aur2ccr.conf
-pname="aur2ccr"         pver="0.7.2"
+pname="aur2ccr"         pver="0.7"
 confdir="/etc/aur2ccr"  lconfdir=~/.aur2ccr # must be unquoted to use ~ substitution
 tmpdir="/tmp/aur2ccr"   ltmpdir=~/tmp/aur2ccr
 namesconf="names.conf"  apconf="archrepos.pacman.conf"  
@@ -257,6 +257,7 @@ isinstalled() { # check if $1 is already installed
 
 getneedeps() { # get the deps we need from CCR, return in $needeps
   debug "getneedeps($@)"
+  needeps=
   for dep in "${depends[@]}"; do
     if isinrepos $dep; then
       needeps="$needeps"
@@ -341,11 +342,11 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down a littl
       if isinaur $pkg; then
         debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (isdepend=1 makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (makeccrpkg $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       elif isinarchr $pkg; then
         msg "'$pkg' found in the Arch repos..."; debug "pushd `pwd`"
         pushd "$(pwd)" >/dev/null
-        (isdepend=1 makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
+        (makeccrpkg_r $pkg && (debug "popd"; popd >/dev/null)) || (err "Some error occurred while building '$pkg'"; err "Without this dependency, $pkgname cannot be built"; debug "popd"; popd >/dev/null; exit 1) || return 1
       else
         err "Sorry, dependency '$pkg' cannot be found."; err "Without this dependency, $pkgname cannot be built"; logerr $pkg
         return 1
@@ -408,18 +409,7 @@ makeccrpkg() {  # grab a package from AUR, and make it into a CCR-ready src pack
   wget "https://aur.archlinux.org/packages/$(echo "$pkgname" | sed 's/\(..\).*/\1/')/$pkgname/$pkgname.tar.gz" || (err "There was an error while trying to download the package."; logerr $pkgname; exit 1) || return 1
   (tar -xzf "$pkgname.tar.gz" && rm "$pkgname.tar.gz") || (err "tar could not extract the archive"; logerr $pkgname; exit 1) || return 1
   cd "$pkgname"
-  if [[ "$isdepend" == 1 ]]; then
-    installb=$install
-    install=1
-  fi
-  if dotherest "$pkgname"; then
-    install=$installb
-    return 0
-  else
-    install=$installb
-    logerr $pkgname
-    return 1
-  fi
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
 }
 
 makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-ready src package
@@ -448,18 +438,7 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
     return 1
   fi  #  ^ this is a quick fix ^
   cd "$pkgname"
-  if [[ "$isdepend" == 1 ]]; then
-    installb=$install
-    install=1
-  fi
-  if dotherest "$pkgname"; then
-    install=$installb
-    return 0
-  else
-    install=$installb
-    logerr $pkgname
-    return 1
-  fi
+  dotherest "$pkgname" || (logerr $pkgname; exit 1) || return 1
 }
   
 makeccrpkg_u() {  # make a package from a URL
@@ -573,13 +552,7 @@ checkaur() {
 }
 
 setup() {  # perform some setup-related stuff interactively
-  msg "In order to choose the best mirror, we need to know where you are."
-  d_country="$(quiet=1 getmirrors.sh)" d_country="${d_country-Any}"
-  msg -n "Please enter your country (leave blank to use '$d_country'): "
-  read u_country
-  [[ "$u_country" == "" ]] && u_country="$d_country"
-  msg "Generating pacman configuration for $paconf..."
-  (sudo country="$u_country" apconf="$paconf" getmirrors.sh && msg "Done") || (err "Sorry, something went wrong."; err "Try again with a different country, or make sure you are connected to the internet.")
+  sudo paconf="$paconf" getmirrors.py # getmirrors.py must exist in PATH
   exit 0
 }
 
