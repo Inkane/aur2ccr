@@ -179,7 +179,7 @@ depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
 
 addmaintainer() {  # change maintainer info in the PKGBUILD
   debug "addmaintainer('$@')"
-  sed -i 's/^# Maintainer: /# Contributer: /' PKGBUILD
+  sed -i 's/^# Maintainer: /# Contributor: /' PKGBUILD
   (printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD) || return 1
 }
 
@@ -187,7 +187,7 @@ addad() {
   debug "addad('$@')"
   ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporting aur2ccr! :)"
 2i
-# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
 .
 wq
 EOF
@@ -577,7 +577,7 @@ usage() {
   echo "  -l, --log <logfile>	  use 'tee' to send all aur2ccr messages to <logfile>" ; echo
   echo "Other: "
   echo "  -s, --setup		  perform setup-related tasks, such as choosing the best Arch mirror"
-  echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributer: "
+  echo "  -a, --addad		  add an aur2ccr advertisement - add as Contributor: "
   echo "        		  'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
   echo "  -h, --help		  display this help and exit"
   echo "  -v, --version		  print version information and exit" ; echo 
