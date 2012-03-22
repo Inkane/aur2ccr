@@ -622,7 +622,7 @@ popopts() {  # populate variables, enumerate options and arguments
       "-c"|"--consolidate") consolidate=1;;
       "-f"|"--from-src") shift
         if validate_option "$1"; then
-          file="$1";--- 
+          file="$1";
         else
           err "missing source file" && exit 3;
         fi;;
