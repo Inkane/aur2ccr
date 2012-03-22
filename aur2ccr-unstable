@@ -313,9 +313,10 @@ dotherest() {  # this used to be 150 lines, but I managed to get it down a littl
   [[ -n "$maintainer" ]] && (msg "Changing maintainer information..."; debug "if addmaintainer \$maintainer, then msg(done), else err(failed)..."; (addmaintainer "$maintainer" && msg "Done" || err "Failed"))
   debug "if \$addad then addad..."
   [[ "$addad" == 1 ]] && addad
-  if resetrel == 1 then
+  if [[ resetrel == 1 ]] then
       debug "reset pkgrel"
-      sed -rie s/pkgrel=[0-9]+/pkgrel=1/g PKGBUILD      
+      sed -rie s/pkgrel=[0-9]+/pkgrel=1/g PKGBUILD
+  fi
   debug "if uchksums..."
   (uchksums && msg "checksums for $pkgname updated") || warn "checksums for $pkgname could not be updated!"
   debug "if \$edit, then edit..."
