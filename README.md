@@ -9,8 +9,10 @@ See issues (https://github.com/redhat69/aur2ccr/issues/).
 # Installation:
 Installation for aur2ccr is simple. Just run
 `ccr -S aur2ccr`, `ccr -S aur2ccr-git`, or 
+
     git clone git://github.com/redhat69/aur2ccr.git
     cd aur2ccr
     make
     sudo make install
+
 This will install the script itself, the needed configuration files, and the aur2ccr(8) man page. There is no need for a ./configure, as the script only works on one platform: Chakra Linux.
