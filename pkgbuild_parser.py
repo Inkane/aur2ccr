@@ -38,7 +38,6 @@ license = Literal("license=(") + OneOrMore(valname) + ")"
 
 groups = Literal("groups=(") + OneOrMore(valname) + ")"
 
-dependency = "'" + val_package_name + Optional(compare_operators + vnum) + "'" | '"' + val_package_name + Optional(compare_operators + vnum) + '"'
 dependency = opQuotedString(val_package_name + Optional(compare_operators + vnum))
 
 depends = Literal("depends=(") + Group(ZeroOrMore(dependency)).setResultsName("dependencies") + ")"
