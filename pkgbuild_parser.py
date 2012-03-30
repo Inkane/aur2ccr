@@ -1,5 +1,5 @@
-from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, Group, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd
-import logging
+from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd, restOfLine, stringEnd
+# import logging
 
 
 # define a class which tracks all packages
@@ -46,7 +46,9 @@ pkgrel = Literal("pkgrel=") + Word(nums)
 
 epoch = Literal("epoch=") + Word(nums)
 
-pkgdesc = Literal("pkgdesc=") + opQuotedString(Word(valname))
+pkgdesc = Literal("pkgdesc=") + opQuotedString(OneOrMore(Word(printables)))
+
+screenshot = "screenshot=" + opQuotedString(OneOrMore(Word(printables)))
 
 # define a valid architecture
 valid_arch = opQuotedString(Word(valname))
@@ -95,16 +97,17 @@ chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + "
 
 # TODO: improve function parsing
 function_body = nestedExpr(opener="{", closer="}")
-build = Literal("build() ") + function_body
-check = Literal("check()") + function_body
-package = Literal("package() ") + function_body
+build = Combine(Literal("build() ") + function_body)
+check = Combine(Literal("check()") + function_body)
+package = Combine(Literal("package() ") + function_body)
 
-comment = "#" + OneOrMore(Word(printables)) + ZeroOrMore(lineEnd)
+maintainer = Combine("#" + Literal("Maintainer:") + restOfLine)
+comment = Combine("#" + restOfLine)
 
 # TODO: match all possible PKGBUILDs
 pkgbuildline = (pkgname | pkgver | pkgrel | pkgdesc | epoch | url | license
                | install | changelog | source | noextract | chksums | groups
                | arch | backup | depends | makedepends | optdepends | conflicts
-               | provides | replaces | options | build | check | package | comment)
-pkgbuildline.addParseAction(logging.info)
-pkgbuild = OneOrMore(pkgbuildline)
+               | provides | replaces | options | build | check | package
+               | maintainer | comment) + ZeroOrMore(lineEnd)
+pkgbuild = OneOrMore(pkgbuildline) + stringEnd
