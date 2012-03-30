@@ -2,6 +2,28 @@ from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums
 import logging
 
 
+# define a class which tracks all packages
+class PackageTracker(object):
+    """This will track all packages.
+    Future versions will have better dependency tracking"""
+
+    def __init__(self):
+        self.yet_to_install = []
+        self.already_installed = set()
+        self.errorneous_package = []
+
+    def track_package(self, package):
+        """tracks a package, but only if it is not converted yet."""
+        if package not in self.already_installed:
+            self.yet_to_install.append(package)
+        else:
+            # move package up
+            pass
+
+# TODO: use something useful
+ptrack_tmp = []
+
+
 # define some utility classes/functions/constants
 
 def opQuotedString(pattern):
@@ -34,13 +56,13 @@ arch = Literal("arch=(") + OneOrMore(valid_arch) + ")"
 # TODO replace it with a better url parser
 url = Literal("url=") + quotedString(printables)
 
-license = Literal("license=(") + OneOrMore(valname) + ")"
+license = Literal("license=(") + OneOrMore(opQuotedString(Word(valname))) + ")"
 
-groups = Literal("groups=(") + OneOrMore(valname) + ")"
+groups = Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")"
 
-dependency = opQuotedString(val_package_name + Optional(compare_operators + vnum))
+dependency = opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True) + Optional(compare_operators + vnum))
 
-depends = Literal("depends=(") + Group(ZeroOrMore(dependency)).setResultsName("dependencies") + ")"
+depends = Literal("depends=(") + ZeroOrMore(dependency) + ")"
 
 makedepends = Literal("makedepends=(") + ZeroOrMore(dependency) + ")"
 
@@ -54,7 +76,7 @@ conflicts = Literal("conflicts=(") + ZeroOrMore(dependency) + ")"
 
 replaces = Literal("replaces=(") + ZeroOrMore(dependency) + ")"
 
-backup = Literal("backup=(") + ZeroOrMore(valname) + ")"
+backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(valname))) + ")"
 
 valid_options = oneOf("strip docs libtool emptydirs zipman ccache"
                             "distcc buildflags makeflags")
