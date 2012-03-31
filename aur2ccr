@@ -83,8 +83,8 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
     areplist=$(pacman --config "$paconf" -Ssq)
     afullist=$(pacman --config "$paconf" -Ss)
     archrinit=1
-    debug "sudo pacman -Sy ..."
-    sudo pacman -Sy >&2> /dev/null
+    debug "sudo pacman -Syy ..."
+    sudo pacman -Syy >&2> /dev/null
   else
     err "An error occurred while checking Arch repos."
     debug "exiting..."
