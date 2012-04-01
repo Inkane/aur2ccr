@@ -38,7 +38,7 @@ vnum = Word(nums) + Optional(Word(nums + "."))
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
 
-pkgname = Literal("pkgname=") + val_package_name
+pkgname = Literal("pkgname=") + opQuotedString(val_package_name)
 
 pkgver = Literal("pkgver=") + vnum
 
@@ -46,22 +46,25 @@ pkgrel = Literal("pkgrel=") + Word(nums)
 
 epoch = Literal("epoch=") + Word(nums)
 
-pkgdesc = Literal("pkgdesc=") + opQuotedString(OneOrMore(Word(printables)))
+pkgdesc = Literal("pkgdesc=") + quotedString
 
-screenshot = "screenshot=" + opQuotedString(OneOrMore(Word(printables)))
+screenshot = "screenshot=" + quotedString
 
 # define a valid architecture
 valid_arch = opQuotedString(Word(valname))
 
 arch = Literal("arch=(") + OneOrMore(valid_arch) + ")"
 
-# TODO replace it with a better url parser
-url = Literal("url=") + quotedString(printables)
+# TODO: replace it with a better url parser
+url = Literal("url=") + quotedString
 
-license = Literal("license=(") + OneOrMore(opQuotedString(Word(valname))) + ")"
+# TODO: accept only the neccessary characters
+ac_chars = printables.replace("(", "").replace(")", "")
+license = Combine(Literal("license=(") + OneOrMore(opQuotedString(Word(ac_chars))) + ")")
 
-groups = Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")"
+groups = Combine(Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")")
 
+# all about dependencies
 dependency = opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True) + Optional(compare_operators + vnum))
 
 depends = Literal("depends=(") + ZeroOrMore(dependency) + ")"
@@ -82,14 +85,14 @@ backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(valname))) + ")"
 
 valid_options = oneOf("strip docs libtool emptydirs zipman ccache"
                             "distcc buildflags makeflags")
-options = Literal("options=(") + ZeroOrMore(valid_options) + ")"
+options = Combine(Literal("options=(") + ZeroOrMore(valid_options) + ")")
 
-install = Literal("install=") + ZeroOrMore(opQuotedString(Word(valname)))
+install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Word(valname))))
 
-changelog = Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valname)))
+changelog = Combine(Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valname))))
 
 # TODO better parsing, allow filename::url, but forbid fi:lename
-source = Literal("source=(") + ZeroOrMore(opQuotedString(Word(valname + "$:"))) + ")"
+source = Literal("source=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 
 noextract = Literal("noxetract=(") + ZeroOrMore(opQuotedString(Word(valname)))
 valid_chksums = oneOf("sha1sums sha256sums sha384sums sha512sums md5sums")
@@ -97,17 +100,17 @@ chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + "
 
 # TODO: improve function parsing
 function_body = nestedExpr(opener="{", closer="}")
-build = Combine(Literal("build() ") + function_body)
-check = Combine(Literal("check()") + function_body)
-package = Combine(Literal("package() ") + function_body)
+build = Literal("build()") + function_body
+check = Literal("check()") + function_body
+package = Literal("package()") + function_body
 
 maintainer = Combine("#" + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
 
 # TODO: match all possible PKGBUILDs
-pkgbuildline = (pkgname | pkgver | pkgrel | pkgdesc | epoch | url | license
-               | install | changelog | source | noextract | chksums | groups
-               | arch | backup | depends | makedepends | optdepends | conflicts
-               | provides | replaces | options | build | check | package
-               | maintainer | comment) + ZeroOrMore(lineEnd)
+pkgbuildline = (pkgname.setResultsName("pkgname") | pkgver.setResultsName("pkgver") | pkgrel.setResultsName("pkgrel") | pkgdesc.setResultsName("pkgdesc") | epoch.setResultsName("epoch") | url.setResultsName("url") | license.setResultsName("license")
+               | install.setResultsName("install") | changelog.setResultsName("changelog") | source.setResultsName("source") | noextract.setResultsName("noextract") | chksums.setResultsName("chksums") | groups.setResultsName("groups")
+               | arch.setResultsName("arch") | backup.setResultsName("backup") | depends.setResultsName("depends") | makedepends.setResultsName("makedepends") | optdepends.setResultsName("optdepends") | conflicts.setResultsName("conflicts")
+               | provides.setResultsName("provides") | replaces.setResultsName("replaces") | options.setResultsName("options") | build.setResultsName("build") | check.setResultsName("check") | package.setResultsName("package")
+               | maintainer.setResultsName("maintainer") | comment.setResultsName("comment")) | screenshot.setResultsName("screenshot") + ZeroOrMore(lineEnd)
 pkgbuild = OneOrMore(pkgbuildline) + stringEnd
