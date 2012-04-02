@@ -1,7 +1,15 @@
 from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd, restOfLine, stringEnd, Group
 # import logging
 
+
 # define some utility classes/functions/constants
+# TODO: recalculate the need for a global variable
+class expand_variable():
+    """class which is needed to replace variables"""
+
+    def __init__(self):
+        self.vars = {}
+
 
 def opQuotedString(pattern):
     return "'" + pattern + "'" | pattern | '"' + pattern + '"'
