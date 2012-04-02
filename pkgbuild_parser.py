@@ -1,28 +1,5 @@
-from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd, restOfLine, stringEnd
+from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd, restOfLine, stringEnd, Group
 # import logging
-
-
-# define a class which tracks all packages
-class PackageTracker(object):
-    """This will track all packages.
-    Future versions will have better dependency tracking"""
-
-    def __init__(self):
-        self.yet_to_install = []
-        self.already_installed = set()
-        self.errorneous_package = []
-
-    def track_package(self, package):
-        """tracks a package, but only if it is not converted yet."""
-        if package not in self.already_installed:
-            self.yet_to_install.append(package)
-        else:
-            # move package up
-            pass
-
-# TODO: use something useful
-ptrack_tmp = []
-
 
 # define some utility classes/functions/constants
 
@@ -30,10 +7,10 @@ def opQuotedString(pattern):
     return "'" + pattern + "'" | pattern | '"' + pattern + '"'
 
 compare_operators = oneOf("< > =  >= <=")
-valname = alphanums + "-_"
+valname = alphanums + "-_${}"
 
 # version number
-vnum = Word(nums) + Optional(Word(nums + "."))
+vnum = Word(nums) + Optional(Word(nums + ".-_"))
 
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
@@ -59,19 +36,25 @@ arch = Literal("arch=(") + OneOrMore(valid_arch) + ")"
 url = Literal("url=") + quotedString
 
 # TODO: accept only the neccessary characters
-ac_chars = printables.replace("(", "").replace(")", "")
+ac_chars = printables.replace("(", "").replace(")", "").replace("'", "").replace('"', "").replace("=", "")
 license = Combine(Literal("license=(") + OneOrMore(opQuotedString(Word(ac_chars))) + ")")
 
 groups = Combine(Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")")
 
 # all about dependencies
-dependency = opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True) + Optional(compare_operators + vnum))
+# normal dependency format: name + [qualifier] + version
+dependency = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
+             + Optional(Group(compare_operators + vnum)).setResultsName("pversion", listAllMatches=True)))
+# descriptive dependency: name + [qualifier] + version + ':' + description
+descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
+             + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
+
 
 depends = Literal("depends=(") + ZeroOrMore(dependency) + ")"
 
 makedepends = Literal("makedepends=(") + ZeroOrMore(dependency) + ")"
 
-optdepends = Literal("optdepends=(") + ZeroOrMore(dependency) + ")"
+optdepends = Literal("optdepends=(") + ZeroOrMore(descriptive_dep) + ")"
 
 checkdepends = Literal("checkdepends=(") + ZeroOrMore(dependency) + ")"
 
@@ -85,9 +68,9 @@ backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(valname))) + ")"
 
 valid_options = oneOf("strip docs libtool emptydirs zipman ccache"
                             "distcc buildflags makeflags")
-options = Combine(Literal("options=(") + ZeroOrMore(valid_options) + ")")
+options = Combine(Literal("options=(") + ZeroOrMore(opQuotedString(Optional("!") + valid_options)) + ")")
 
-install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Word(valname))))
+install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Optional("!") + Word(ac_chars))))
 
 changelog = Combine(Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valname))))
 
@@ -106,6 +89,8 @@ package = Literal("package()") + function_body
 
 maintainer = Combine("#" + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
+
+safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars)))
 
 # TODO: match all possible PKGBUILDs
 pkgbuildline = (pkgname.setResultsName("pkgname")
@@ -135,5 +120,6 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | package.setResultsName("package")
         | maintainer.setResultsName("maintainer")
         | comment.setResultsName("comment")
+        | safe_variable.setResultsName("variable")
         | screenshot.setResultsName("screenshot")) + ZeroOrMore(lineEnd)
-pkgbuild = OneOrMore(pkgbuildline) + stringEnd
+parser = OneOrMore(pkgbuildline) + stringEnd
