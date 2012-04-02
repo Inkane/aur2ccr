@@ -1,0 +1,83 @@
+# Maintainer: Inkane <Neoinkaneglade@aol.com>
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributer: Arch Linux Pro Audio <dev@archaudio.org>
+# Contributor: Jon Austin (IRC: slypheed) <jon.i.austin (gmail)>
+# Contributor: SpepS <dreamspepser at yahoo dot it>
+# Contributor: Bernardo 'smoge' Barros <bernardobarros@gmail.com>
+
+pkgname=csound-git
+pkgver=20120318
+pkgrel=1
+pkgdesc="A programming language designed and optimized for sound rendering and signal processing"
+url="http://csound.sourceforge.net/"
+arch=('i686' 'x86_64')
+license=('LGPL' 'GPL')
+depends=('python' 'fltk' 'portaudio' 'fluidsynth' 'liblo' 'portmidi' 'tk')
+makedepends=('scons' 'git')
+provides=('csound5' 'csound')
+conflicts=('csound' 'csound5' 'csound5-cvs')
+install=${pkgname}.install
+# frontends are currently not in CCR 
+#optdepends=('qutecsound: qt frontend'
+#            'cecilia: tcl/tk frontend'
+#            'cecilia4: wxpython frontend')
+            
+_gitroot="git://csound.git.sourceforge.net/gitroot/csound/csound5"
+_gitname="csound"
+         
+build() {
+  cd "$srcdir"
+  msg "Connecting to GIT server...."
+
+  if [ -d $_gitname ] ; then
+    cd $_gitname && git pull origin
+    msg "The local files are updated."
+  else
+    git clone $_gitroot $_gitname
+  fi
+
+  msg "GIT checkout done or server timeout"
+  msg "Starting make..."
+
+  rm -rf "$srcdir/$_gitname-build"
+  cp -r "$srcdir/$_gitname" "$srcdir/$_gitname-build"
+  cd "$srcdir/$_gitname-build"
+
+  # we need to choose a custom-*.py file
+  cp custom-linux-mkg.py custom.py
+
+  # this introduces some errors, currently disable
+    ## Prevent installing unneeded stuff, fix python install path
+  #sed -i "s|\(pythonDir.*\)/usr|$pkgdir/usr|;483,484d;421,456d" install.py
+
+  ## Python2 fixes
+  #sed "s_\(env python\).*_
+#_;s_\(bin/python\).*_
+#_" \
+    #-i `grep -rlE "(env python|bin/python)" .`
+
+
+
+  #scons custom=custom-linux-mkg.py \
+    #customCFLAGS="-O2 -march=native -mtune=native -pipe -fomit-frame-pointe" \
+    #useDouble=1 usePortAudio=1 usePortMIDI=1 useALSA=1 useJack=1 useFLTK=1 \
+    #useFLTKThreads=1 pythonVersion=2.7 buildCsoundVST=0 buildCsoundAC=0 \
+    #buildCsound5GUI=0 buildLoris=0 useOSC=1 bufferoverflowu=0 useUPD=1 \
+    #buildPythonOpcodes=1 prefix=/usr instdir=$pkgdir buildRelease=1 \
+    #noDebug=1 gcc3opt=0 gcc4opt=native useLrint=0 useGprof=0 Word64=1 \
+    #Lib64=0 dynamicCsoundLibrary=1 buildStkOpcodes=1 install=0 \
+    #buildPDClass=0 useCoreAudio=0 useAltivec=1 buildDSSI=1 buildUtilities=1 \
+    #buildTclcsound=0 buildWinsound=0 buildVirtual=0 buildInterfaces=0 \
+    #buildLuaWrapper=0 buildPythonWrapper=1 buildJavaWrapper=0 buildOSXGUI=0 \
+    #buildCSEditor=0 withICL=0 withMSVC=0 withSunStudio=0 buildNewParser=1 \
+    #NewParserDebug=0 buildvst4cs=0 useGettext=1 buildImageOpcodes=1 \
+    #useOpenMP=0 buildOLPC=0 tclversion=8.5 includeMPD=0 includeWii=0 \
+    #includeP5Glove=0 buildBeats=0
+
+  scons march=native mtune=native
+  python2 install.py --prefix="$pkgdir/usr"
+
+  # Install examples
+  install -d "$pkgdir/usr/share/$pkgname"
+  cp -a examples "$pkgdir/usr/share/$pkgname"
+}

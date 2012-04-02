@@ -1,0 +1,58 @@
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributer: Ray Rashif <schiv@archlinux.org>
+# Contributor: Brad Fanella <bradfanella@archlinux.us>
+# See .contrib for older/other contributors
+
+pkgname=eric
+pkgver=5.1.8
+pkgrel=1
+pkgdesc="A full-featured Python 3.x and Ruby IDE in PyQt4"
+arch=('any')
+url="http://eric-ide.python-projects.org/"
+license=('GPL3')
+depends=('python-qscintilla')
+conflicts=('eric5')
+provides=('eric5')
+replaces=('eric5')
+install=$pkgname.install
+source=("http://downloads.sourceforge.net/eric-ide/eric5-$pkgver.tar.gz"
+        "$pkgname.desktop")
+md5sums=('5f9bbb74ed694bff10ba31c3fa27b1c2'
+         '8aa446c29e6de54e85410e040e754c6e')
+
+build() {
+  cd "$srcdir/eric5-$pkgver"
+
+  # some freedesktop.org compatibility adjustments
+  for i in $(grep -R "eric5.desktop" . | sed 's/:.*//' | sort -u); do
+    sed -i "s/eric5.desktop/eric.desktop/" $i
+  done
+
+  rm eric/eric5.desktop
+  install -m644 ../$pkgname.desktop eric/$pkgname.desktop
+}
+
+package() {
+  cd "$srcdir/eric5-$pkgver"
+
+  python3 install.py -c -b /usr/bin -i "$pkgdir"
+
+  # Remove files conflicting with eric4
+  # what are we doing here?
+  # TODO: tell upstream to fix their stuff
+  #   and allow installation of eric4 + eric5
+  #   OR package these files separately eg. 'eric-common'
+  rm "$pkgdir/usr/share/qt/qsci/api/python/zope-2.10.7.api"
+  rm "$pkgdir/usr/share/qt/qsci/api/python/zope-2.11.2.api"
+  rm "$pkgdir/usr/share/qt/qsci/api/python/zope-3.3.1.api"
+  rm "$pkgdir/usr/share/qt/qsci/api/ruby/Ruby-1.8.7.api"
+
+  # some canonical symlinks
+  cd "$pkgdir/usr/bin"
+  for i in *; do
+    ln -s /usr/bin/$i ${i/eric5/eric}
+  done
+}
+
+# vim:set ts=2 sw=2 et:

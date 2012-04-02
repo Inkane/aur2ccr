@@ -1,0 +1,24 @@
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributor: Dragonlord <dragonlord[at]seznam[.]cz>
+pkgname=fim
+pkgver=0.3
+pkgrel=1
+pkgdesc="Highly customizable and scriptable framebuffer image viewer based on fbi."
+arch=('i686', 'x86_64')
+url="https://www.autistici.org/dezperado/"
+license=('GPL')
+depends=('giflib' 'libpng' 'libjpeg-turbo' 'libtiff' 'readline')
+optdepends=('screen')
+source=(http://download.savannah.nongnu.org/releases/fbi-improved/$pkgname-$pkgver-beta-prerelease.tar.gz)
+
+md5sums=('06fd4fd92f3b6d1c1d98d85af040b677')
+
+build() {
+  cd "$startdir/src/$pkgname-$pkgver-beta-prerelease"
+
+  ./configure
+  ./configure --prefix=/usr \
+  --enable-screen  #comment this line to disable screen support
+  make || return 1
+  make DESTDIR="$startdir/pkg" install
+}

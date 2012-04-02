@@ -1,0 +1,54 @@
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributer: Army <uli armbruster who uses the google mail service>
+
+pkgname=mupdf-git
+pkgver=20120330
+pkgrel=1
+pkgdesc="lightweight PDF viewer and toolkit written in portable C"
+screenshot="http://free4w.com/wp-content/uploads/2009/09/mupdf_1.jpg"
+arch=('i686' 'x86_64')
+url="http://mupdf.com"
+license=("GPL3")
+depends=('libxext' 'desktop-file-utils')
+makedepends=('git')
+provides=('mupdf')
+conflicts=('mupdf')
+source=("http://www.mupdf.com/download/mupdf-thirdparty.zip")
+md5sums=('d30f1ecfd812aedcfa9305f621d3cb51')
+install=mupdf-git.install
+
+_gitroot="git://git.ghostscript.com/mupdf.git"
+_gitname="mupdf"
+
+build() {
+        cd "$srcdir"
+        msg "Connecting to GIT server...."
+
+        if [ -d ${_gitname} ] ; then
+                cd ${_gitname} && git pull
+                msg "The local files are updated."
+        else
+                git clone ${_gitroot} ${_gitname}
+        fi
+        msg "GIT checkout done or server timeout"
+
+        rm -rf "${srcdir}/${_gitname}-build"
+        cp -a "${srcdir}/${_gitname}" "${srcdir}/${_gitname}-build"
+
+        # Copy required 3rd party libraries into build directory
+        cp -a "${srcdir}/thirdparty" "${srcdir}/${_gitname}-build/"
+}
+
+package() {
+        cd "${srcdir}/${_gitname}-build"
+        make build=release prefix="${pkgdir}/usr" install
+
+        cd "$srcdir/${_gitname}-build/debian"
+        install -Dm644 mupdf.desktop "${pkgdir}/usr/share/applications/mupdf.desktop"
+        install -Dm644 mupdf.xpm "${pkgdir}/usr/share/pixmaps/mupdf.xpm"
+
+        # apparently an upstream bug, namcap doesn't like it
+        cd "${pkgdir}/usr/lib"
+        for i in *;do   chmod -x "$i";done
+}

@@ -1,0 +1,39 @@
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributer: Florian Pritz <bluewind@xinu.at>
+# Contributor: Geoffroy Carrier <geoffroy.carrier@koon.fr>
+# Contributor: Daniel J Griffiths <ghost1227@archlinux.us>
+
+pkgname=vimpager
+pkgver=1.6.7
+pkgrel=1
+pkgdesc="A vim-based script to use as a PAGER."
+arch=('any')
+url="http://www.vim.org/scripts/script.php?script_id=1723"
+license=('custom:vim')
+depends=('vim')
+noextract=('vimpager-$pkgver.tar.gz')
+source=("vimpager-$pkgver.tar.gz::https://github.com/rkitover/vimpager/tarball/$pkgver" 
+	license.txt)
+md5sums=('6f904ad6f00cdea9cbfff7c7fcfca3a8'
+         'cd49910a3dde6fe0a7e24ebe8cbf7066')
+
+build() {
+	cd "${srcdir}"
+
+	mkdir -p "$srcdir/vimpager-$pkgver"
+	bsdtar --strip-components=1 -C "$srcdir/vimpager-$pkgver" -xf vimpager-$pkgver.tar.gz
+
+	cd "$srcdir/vimpager-$pkgver"
+
+	sed -i "s/$//" vimpager
+	sed -i "s|/man/man1|/share/man/man1|g" Makefile
+}
+
+package() {
+	cd "${srcdir}/vimpager-$pkgver"
+
+	make PREFIX="/usr" DESTDIR="$pkgdir" install
+
+	install -Dm644 "$srcdir/license.txt" "${pkgdir}/usr/share/licenses/${pkgname}/license.txt"
+}

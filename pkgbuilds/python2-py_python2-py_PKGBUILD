@@ -1,0 +1,20 @@
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributor: Sebastian Wiesner <lunaryorn googlemail com>
+# Contributor: Igor Ramos Tiburcio <irtigor@yahoo.com.br>
+pkgname=python2-py
+pkgver=1.4.7
+pkgrel=1
+pkgdesc="Python rapid development tools"
+arch=('any')
+url="http://pylib.org"
+license=('MIT')
+makedepends=("python-distribute")
+source=("http://pypi.python.org/packages/source/p/py/py-$pkgver.zip")
+md5sums=('fb1b2608eb4f52f67405fb316dbab09f')
+
+build() {
+    cd "$srcdir/py-$pkgver"
+    python2 setup.py install --root="$pkgdir" -O1 || return 1
+    install -Dm644 LICENSE $pkgdir/usr/share/licenses/$pkgname/LICENSE
+}
