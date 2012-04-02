@@ -9,7 +9,7 @@ pkgrel=1
 pkgdesc='A very powerful graph editor written in java.'
 arch=('i686' 'x86_64')
 url='http://www.yworks.com/en/products_yed_about.html'
-license='http://www.yworks.com/products/yed/license.html'
+license=('http://www.yworks.com/products/yed/license.html')
 depends=('java-runtime')
 source=("http://www.yworks.com/products/yed/demo/yEd-${pkgver}.zip"
         'yed.desktop'

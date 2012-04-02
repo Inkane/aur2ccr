@@ -19,8 +19,8 @@ makedepends=(" git ")
 provides=( )
 conflicts=(" herbstluftwm-git ")
 backup=( )
-source=(" http://wwwcip.cs.fau.de/~re06huxa/herbstluftwm/tarballs/$pkgname-$pkgver.tar.gz")
-md5sums=(" '1628f236a7086f007260f9f59e446b1c' ")
+source=("http://wwwcip.cs.fau.de/~re06huxa/herbstluftwm/tarballs/$pkgname-$pkgver.tar.gz")
+md5sums=("1628f236a7086f007260f9f59e446b1c")
 
 build() {
   cd $srcdir/herbstluftwm-$pkgver

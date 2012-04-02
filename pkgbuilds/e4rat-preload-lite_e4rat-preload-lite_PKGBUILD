@@ -4,7 +4,6 @@
 pkgname=e4rat-preload-lite
 pkgver=0.1
 pkgrel=4
-epoch=
 pkgdesc="Replacement for e4rat-preload, which takes less time to load the
 inodes. The savings come from using pure C with no external librairy references
 and by preloading only the first 100 files (both inodes and file contents)

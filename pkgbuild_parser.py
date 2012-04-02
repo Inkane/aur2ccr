@@ -1,4 +1,4 @@
-from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, lineEnd, restOfLine, stringEnd, Group
+from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString
 # import logging
 
 
@@ -14,24 +14,32 @@ class expand_variable():
 def opQuotedString(pattern):
     return "'" + pattern + "'" | pattern | '"' + pattern + '"'
 
+
+def Array(name, body, body2=None):
+    if not body2:
+        body2 = body
+    return (Literal(name) + "=(" + body + ")" | Literal(name) + "[" + Word(nums) + "]" + body2)
+
 compare_operators = oneOf("< > =  >= <=")
-valname = alphanums + "-_${}"
+valname = alphanums + "-_${}+"
 
 # version number
-vnum = Word(nums) + Optional(Word(nums + ".-_"))
+vnum = Word(nums) + Optional(Word(alphanums + ".-_"))
 
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
 
-pkgname = Literal("pkgname=") + opQuotedString(val_package_name)
+pkgname = Literal("pkgname=") + (opQuotedString(val_package_name)
+          | "(" + opQuotedString(val_package_name) + ")")
 
-pkgver = Literal("pkgver=") + vnum
+pkgver = Literal("pkgver=") + vnum.leaveWhitespace() + LineEnd()
 
 pkgrel = Literal("pkgrel=") + Word(nums)
 
 epoch = Literal("epoch=") + Word(nums)
 
-pkgdesc = Literal("pkgdesc=") + quotedString
+pkgdesc = Literal("pkgdesc=") + (QuotedString(quoteChar="'", multiline=True) | QuotedString(quoteChar='"', multiline=True))
+
 
 screenshot = "screenshot=" + quotedString
 
@@ -39,13 +47,15 @@ screenshot = "screenshot=" + quotedString
 valid_arch = opQuotedString(Word(valname))
 
 arch = Literal("arch=(") + OneOrMore(valid_arch) + ")"
+arch = Array("arch", OneOrMore(valid_arch), valid_arch)
 
-# TODO: replace it with a better url parser
-url = Literal("url=") + quotedString
 
 # TODO: accept only the neccessary characters
 ac_chars = printables.replace("(", "").replace(")", "").replace("'", "").replace('"', "").replace("=", "")
-license = Combine(Literal("license=(") + OneOrMore(opQuotedString(Word(ac_chars))) + ")")
+license = Literal("license=(") + OneOrMore(opQuotedString(Word(ac_chars))) + ")"
+
+# TODO: replace it with a better url parser
+url = Literal("url=") + opQuotedString(Word(printables))
 
 groups = Combine(Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")")
 
@@ -72,11 +82,11 @@ conflicts = Literal("conflicts=(") + ZeroOrMore(dependency) + ")"
 
 replaces = Literal("replaces=(") + ZeroOrMore(dependency) + ")"
 
-backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(valname))) + ")"
+backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 
 valid_options = oneOf("strip docs libtool emptydirs zipman ccache"
                             "distcc buildflags makeflags")
-options = Combine(Literal("options=(") + ZeroOrMore(opQuotedString(Optional("!") + valid_options)) + ")")
+options = Literal("options=(") + ZeroOrMore(opQuotedString(Optional("!") + valid_options)) + ")"
 
 install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Optional("!") + Word(ac_chars))))
 
@@ -85,7 +95,7 @@ changelog = Combine(Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valna
 # TODO better parsing, allow filename::url, but forbid fi:lename
 source = Literal("source=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 
-noextract = Literal("noxetract=(") + ZeroOrMore(opQuotedString(Word(valname)))
+noextract = Literal("noextract=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 valid_chksums = oneOf("sha1sums sha256sums sha384sums sha512sums md5sums")
 chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + ")"
 
@@ -98,7 +108,13 @@ package = Literal("package()") + function_body
 maintainer = Combine("#" + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
 
-safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars)))
+safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars.replace(";", ""))))
+var_array = "(" + opQuotedString(Word(ac_chars + " =")) + ")"
+bad_variable = Combine(Word(ac_chars) + "=" + (var_array | opQuotedString(Word(ac_chars))))
+
+if_expression = Forward()
+statement_seperator = Literal(";")
+statement_block = Forward()
 
 # TODO: match all possible PKGBUILDs
 pkgbuildline = (pkgname.setResultsName("pkgname")
@@ -129,5 +145,19 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | maintainer.setResultsName("maintainer")
         | comment.setResultsName("comment")
         | safe_variable.setResultsName("variable")
-        | screenshot.setResultsName("screenshot")) + ZeroOrMore(lineEnd)
+        | bad_variable.setResultsName("variable")
+        | if_expression
+        | screenshot.setResultsName("screenshot")
+        | statement_seperator)
+
+statement_block << nestedExpr(opener="{", closer="}", content=OneOrMore(pkgbuildline))
+
+# TODO: there has to be a better way...
+if_expression << (
+   Group("[[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
+ | Group("[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
+ | Group(Literal("if") + QuotedString(quoteChar="[", endQuoteChar="]", multiline=True) + "then" + OneOrMore(pkgbuildline) + Optional("else" + OneOrMore(pkgbuildline)) + "fi")
+)
+
+pb = OneOrMore(pkgbuildline)
 parser = OneOrMore(pkgbuildline) + stringEnd
