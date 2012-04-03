@@ -83,8 +83,8 @@ initarchr() {	# set up the arch repo vars, so we only need to sudo once
     areplist=$(pacman --config "$paconf" -Ssq)
     afullist=$(pacman --config "$paconf" -Ss)
     archrinit=1
-    debug "sudo pacman -Syy ..."
-    sudo pacman -Syy >&2> /dev/null
+    debug "sudo pacman -Sy ..."
+    sudo pacman -Sy >&2> /dev/null
   else
     err "An error occurred while checking Arch repos."
     debug "exiting..."
@@ -513,7 +513,7 @@ makeccrpkg_s() {  # handle split PKGBUILDs
   warn "For more information on split PKGBUILDs, see PKGBUILD(5) or"
   warn "http://www.archlinux.org/pacman/PKGBUILD.5.html#_package_splitting"
   warn "aur2ccr can attempt to rectify this by dividing the PKGBUILD up into multiple"
-  warn "packages, but this is an experimental feature and does not always work. If"
+  warn "packages, but this is an experimantal feature and does not always work. If"
   warn "you do not want this script to attempt to 'unsplit' this package, you will"
   warn "need to do it manually."
   warn "If aur2ccr does try to fix the PKGBUILD, the original will be backed up as"
