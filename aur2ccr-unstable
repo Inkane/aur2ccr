@@ -440,6 +440,7 @@ makeccrpkg_r() {    # grab a package from Arch repos, and make it into a CCR-rea
     err "'$pkgname' cannot be found"; logerr $pkgname
     return 1
   fi; msg "found '$pkgname' as '$archname'"
+  [[ -d /var/abs ]] || sudo mkdir -p /var/abs
   if sudo abs "$archname"; then
     rm -rf "./$pkgname"
     if sudo mv "/var/abs/$archname" "./$pkgname"; then
