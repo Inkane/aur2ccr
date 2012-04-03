@@ -1,8 +1,14 @@
-from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString
+from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString, White
 # import logging
 
 
 # define some utility classes/functions/constants
+
+
+# TODO: accept only the neccessary characters
+ac_chars = printables.replace("(", "").replace(")", "").replace("'", "").replace('"', "").replace("=", "")
+
+
 # TODO: recalculate the need for a global variable
 class expand_variable():
     """class which is needed to replace variables"""
@@ -46,18 +52,16 @@ screenshot = "screenshot=" + quotedString
 # define a valid architecture
 valid_arch = opQuotedString(Word(valname))
 
-arch = Literal("arch=(") + OneOrMore(valid_arch) + ")"
 arch = Array("arch", OneOrMore(valid_arch), valid_arch)
 
 
-# TODO: accept only the neccessary characters
-ac_chars = printables.replace("(", "").replace(")", "").replace("'", "").replace('"', "").replace("=", "")
-license = Literal("license=(") + OneOrMore(opQuotedString(Word(ac_chars))) + ")"
+license = Array("license", OneOrMore(opQuotedString(Word(ac_chars))), opQuotedString(Word(ac_chars)))
 
 # TODO: replace it with a better url parser
 url = Literal("url=") + opQuotedString(Word(printables))
 
 groups = Combine(Literal("groups=(") + OneOrMore(opQuotedString(Word(valname))) + ")")
+groups = Array("groups", OneOrMore(opQuotedString(Word(valname))), opQuotedString(Word(valname)))
 
 # all about dependencies
 # normal dependency format: name + [qualifier] + version
@@ -68,32 +72,32 @@ descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listA
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
 
 
-depends = Literal("depends=(") + ZeroOrMore(dependency) + ")"
+depends = Array("depends", ZeroOrMore(dependency), dependency)
 
-makedepends = Literal("makedepends=(") + ZeroOrMore(dependency) + ")"
+makedepends = Array("makedepends", ZeroOrMore(dependency), dependency)
 
-optdepends = Literal("optdepends=(") + ZeroOrMore(descriptive_dep) + ")"
+optdepends = Array("optdepends", ZeroOrMore(descriptive_dep))
 
-checkdepends = Literal("checkdepends=(") + ZeroOrMore(dependency) + ")"
+checkdepends = Array("checkdepends", ZeroOrMore(dependency), dependency)
 
-provides = Literal("provides=(") + ZeroOrMore(dependency) + ")"
+provides = Array("provides", ZeroOrMore(dependency), dependency)
 
-conflicts = Literal("conflicts=(") + ZeroOrMore(dependency) + ")"
+conflicts = Array("conflicts", ZeroOrMore(dependency), dependency)
 
-replaces = Literal("replaces=(") + ZeroOrMore(dependency) + ")"
+replaces = Array("replaces", ZeroOrMore(dependency), dependency)
 
-backup = Literal("backup=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
+backup = Array("backup", ZeroOrMore(opQuotedString(Word(ac_chars))), opQuotedString(Word(ac_chars)))
 
 valid_options = oneOf("strip docs libtool emptydirs zipman ccache"
                             "distcc buildflags makeflags")
-options = Literal("options=(") + ZeroOrMore(opQuotedString(Optional("!") + valid_options)) + ")"
+options = Array("options", ZeroOrMore(opQuotedString(Optional("!") + valid_options)))
 
 install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Optional("!") + Word(ac_chars))))
 
 changelog = Combine(Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valname))))
 
 # TODO better parsing, allow filename::url, but forbid fi:lename
-source = Literal("source=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
+source = Array("source", ZeroOrMore(opQuotedString(Word(ac_chars + '='))), opQuotedString(Word(ac_chars + '=')))
 
 noextract = Literal("noextract=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 valid_chksums = oneOf("sha1sums sha256sums sha384sums sha512sums md5sums")
@@ -105,7 +109,7 @@ build = Literal("build()") + function_body
 check = Literal("check()") + function_body
 package = Literal("package()") + function_body
 
-maintainer = Combine("#" + Literal("Maintainer:") + restOfLine)
+maintainer = Combine(Literal("#") + Optional(White()) + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
 
 safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars.replace(";", ""))))
@@ -143,7 +147,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | check.setResultsName("check")
         | package.setResultsName("package")
         | maintainer.setResultsName("maintainer")
-        | comment.setResultsName("comment")
+        | comment.setResultsName("comment", listAllMatches=True)
         | safe_variable.setResultsName("variable")
         | bad_variable.setResultsName("variable")
         | if_expression

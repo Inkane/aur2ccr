@@ -1,5 +1,5 @@
-#Maintainer: Inkane <neoinkaneglade@aol.com>
-#Contributor: Gergely Imreh <imrehg(at)gmail(dot)com>
+# Maintainer: Inkane <neoinkaneglade@aol.com>
+# Contributor: Gergely Imreh <imrehg(at)gmail(dot)com>
 pkgname=io
 pkgver=2011.09.12
 pkgrel=1
