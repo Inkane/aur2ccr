@@ -17,5 +17,10 @@ Installation for aur2ccr is simple. Just run
 
 This will install the script itself, the needed configuration files, and the **aur2ccr(8)** man page. There is no need for a `./configure`, as the script only works on one platform: Chakra Linux.
 
+# Configuration:
+To configure aur2ccr, just run
+    aur2ccr --setup
+Or edit the configuration files in /etc/aur2ccr/ by hand. All configuration files in /etc/aur2ccr/ can also be copied to ~/.aur2ccr/. Local conf files take precedence over global ones. 
+
 # Documentation:
 Usage information for this script can be found in the help output (`aur2ccr -h` or `aur2ccr --help`) and the man page (`man 8 aur2ccr`). Configuration options and files are documented in the aur2ccr man page (`man 8 aur2ccr`), and in the global configuration file (`less /etc/aur2ccr/aur2ccr.conf`).
