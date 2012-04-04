@@ -74,11 +74,11 @@ descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listA
 
 depends = Group(Array("depends", ZeroOrMore(dependency), dependency))
 
-makedepends = Array("makedepends", ZeroOrMore(dependency), dependency)
+makedepends = Group(Array("makedepends", ZeroOrMore(dependency), dependency))
 
-optdepends = Array("optdepends", ZeroOrMore(descriptive_dep))
+optdepends = Group(Array("optdepends", ZeroOrMore(descriptive_dep)))
 
-checkdepends = Array("checkdepends", ZeroOrMore(dependency), dependency)
+checkdepends = Group(Array("checkdepends", ZeroOrMore(dependency), dependency))
 
 provides = Array("provides", ZeroOrMore(dependency), dependency)
 
@@ -103,18 +103,26 @@ noextract = Literal("noextract=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) 
 valid_chksums = oneOf("sha1sums sha256sums sha384sums sha512sums md5sums")
 chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + ")"
 
+
 # TODO: improve function parsing
+def function_head(name):
+    """name must be a pyparsing object, e.g. Literal, not a string"""
+    return Optional("function") + name
+
 function_body = nestedExpr(opener="{", closer="}")
-build = Literal("build()") + function_body
-check = Literal("check()") + function_body
-package = Literal("package()") + function_body
+build = function_head(Literal("build()")) + function_body
+check = function_head(Literal("check()")) + function_body
+package = function_head(Literal("package()")) + function_body
 
 maintainer = Combine(Literal("#") + Optional(White()) + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
 
+# variables, arrays, functions, etc...
 safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars.replace(";", ""))))
 var_array = "(" + opQuotedString(Word(ac_chars + " =")) + ")"
 bad_variable = Combine(Word(ac_chars) + "=" + (var_array | opQuotedString(Word(ac_chars))))
+
+generic_function = function_head(Word(alphas, alphanums + "_"))
 
 if_expression = Forward()
 statement_seperator = Literal(";")
@@ -151,6 +159,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | safe_variable.setResultsName("variable")
         | bad_variable.setResultsName("variable")
         | if_expression
+        | generic_function
         | screenshot.setResultsName("screenshot")
         | statement_seperator)
 

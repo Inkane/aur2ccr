@@ -41,6 +41,7 @@ class ParseTest(unittest2.TestCase):
                     msg="error in {}".format(f))
 
         for m in accept_maintainer:
+            # TODO: test is currently useless
             self.assertEqual(accept_maintainer[m], m)
 
     def test_dependency(self):
