@@ -30,7 +30,9 @@ compare_operators = oneOf("< > =  >= <=")
 valname = alphanums + "-_${}+"
 
 # version number
-vnum = Word(nums) + Optional(Word(alphanums + ".-_"))
+# vnum = Word(nums) + Optional(Word(alphanums + ".-_"))
+# It seems like j3.134l.i is a valid version number...
+vnum = Word(alphanums + "._")
 
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
@@ -107,12 +109,12 @@ chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + "
 # TODO: improve function parsing
 def function_head(name):
     """name must be a pyparsing object, e.g. Literal, not a string"""
-    return Optional("function") + name
+    return (Optional("function") + name + "()" | Literal("function") + name)
 
 function_body = nestedExpr(opener="{", closer="}")
-build = function_head(Literal("build()")) + function_body
-check = function_head(Literal("check()")) + function_body
-package = function_head(Literal("package()")) + function_body
+build = function_head(Literal("build")) + function_body
+check = function_head(Literal("check")) + function_body
+package = function_head(Literal("package")) + function_body
 
 maintainer = Combine(Literal("#") + Optional(White()) + Literal("Maintainer:") + restOfLine)
 comment = Combine("#" + restOfLine)
