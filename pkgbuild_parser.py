@@ -72,7 +72,7 @@ descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listA
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
 
 
-depends = Array("depends", ZeroOrMore(dependency), dependency)
+depends = Group(Array("depends", ZeroOrMore(dependency), dependency))
 
 makedepends = Array("makedepends", ZeroOrMore(dependency), dependency)
 
