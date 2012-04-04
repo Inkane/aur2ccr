@@ -1,0 +1,33 @@
+# Maintainer: Mustafa Kılıç <mustafa@fomus.org>
+ 
+pkgname=iscan-plugin-cx4400
+pkgver=2.1.3
+pkgrel=1
+pkgdesc="iscan plugin for Epson Stylus CX4300/CX4400/CX4450/CX5500/CX5600/DX4400/DX4450 scanners."
+arch=('i686' 'x86_64')
+url="http://www.avasys.jp/english/linux_e/"
+license=('custom')
+depends=('iscan')
+install=iscan-plugin-cx4400.install
+
+if [ "$CARCH" = 'i686' ] ; then
+  source=(http://linux.avasys.jp/drivers/iscan-plugins/${pkgname}/${pkgver}/${pkgname}_${pkgver}-1_i386.deb)
+  ARCH=i386
+  md5sums=('21fc4379e4b59d88392ff84812d068b1')
+elif [ "$CARCH" = 'x86_64' ] ; then
+  source=(http://linux.avasys.jp/drivers/iscan-plugins/${pkgname}/${pkgver}/${pkgname}_${pkgver}-1_amd64.deb)
+  ARCH=amd64
+  md5sums=('2bdbf59e861312724fa97a7d26055033')
+fi
+
+
+package() {
+    msg "Extracting..."
+    ar -xv ${pkgname}_${pkgver}-1_$ARCH.deb
+    tar -xvf data.tar.gz
+    msg2 "Done extracting!"
+    msg "Moving files"
+    mv $srcdir/usr $pkgdir
+    msg2 "Done moving files"
+ 
+}
