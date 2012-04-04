@@ -1,0 +1,63 @@
+pkgname=jre6
+_name=jre
+pkgver=6u31
+pkgrel=4
+pkgdesc="Sun's java runtime environment"
+arch=('i686' 'x86_64')
+  [ "$CARCH" = "i686" ]   && ARCH=i586
+  [ "$CARCH" = "x86_64" ] && ARCH=x64
+url="http://java.sun.com"
+depends=('glibc' 'libxtst')
+install="jre.install"
+source=("http://download.oracle.com/otn-pub/java/jdk/${pkgver}-b04/jdk-${pkgver}-linux-${ARCH}.bin"
+        construct.sh::http://java.net/projects/jdk-distros/sources/svn/content/trunk/utils/construct.sh?raw=true
+        jre.profile)
+ 
+[ "${CARCH}" = 'i686' ]   && md5sums=('9e4246fc7a6c0759b8a484ff5e820112'
+                                      '94065b612df0046d9ae758943f9f6a75'
+                                      '50b4f5ac4129097461d246645d73a622')
+[ "${CARCH}" = 'x86_64' ] && md5sums=('2f74dbbee4142b7366c93b115f914fff'
+                                      '94065b612df0046d9ae758943f9f6a75'
+                                      '50b4f5ac4129097461d246645d73a622')
+replaces=('j2re')
+conflicts=('j2re' 'java-runtime')
+provides=('jre' 'j2re' 'java-runtime=6')
+license=('custom')
+
+build() {
+  cd "${srcdir}"
+ 
+  mkdir unbundle-jdk
+  cd unbundle-jdk
+ 
+  sh "../jdk-${pkgver}-linux-${ARCH}.bin" --accept-license
+ 
+  cd ..
+ 
+  sh construct.sh unbundle-jdk linux-jdk linux-jre
+}
+
+package() {
+  cd "${srcdir}"
+ 
+  mkdir -p "${pkgdir}/opt/java"
+  mv linux-jdk/jre "${pkgdir}/opt/java"
+ 
+  install -Dm755 "${srcdir}/${_name}.profile" "${pkgdir}/etc/profile.d/${_name}.sh"
+ 
+  mkdir -p "${pkgdir}/usr/lib/mozilla/plugins"
+ 
+  if [ "${CARCH}" = 'i686' ]; then
+    ln -s /opt/java/jre/lib/i386/libnpjp2.so "${pkgdir}/usr/lib/mozilla/plugins"
+  else
+    ln -s /opt/java/jre/lib/amd64/libnpjp2.so "${pkgdir}/usr/lib/mozilla/plugins"
+  fi
+ 
+  mkdir -p "${pkgdir}/usr/share/licenses/jre"
+  cp "${pkgdir}/opt/java/jre/COPYRIGHT" "${pkgdir}/usr/share/licenses/jre"
+  cp "${pkgdir}/opt/java/jre/LICENSE" "${pkgdir}/usr/share/licenses/jre"
+  cp "${pkgdir}/opt/java/jre/THIRDPARTYLICENSEREADME.txt" "${pkgdir}/usr/share/licenses/jre"
+ 
+  # Fix system prefs folder (FS#18872)
+  install -dm755 "${pkgdir}/etc/.java/.systemPrefs"
+}
