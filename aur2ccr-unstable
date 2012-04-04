@@ -766,7 +766,7 @@ debug "args is $args"
 }
 
 # main()
-debug "main('$@')"
+debug "main('$@') /* version = $pver */"
 # prevent running the script as root
 ([[ $EUID -eq 0 ]] && (err "This script must not be run as root!"; err "aur2ccr will ask for your password if needed."; \
   err "Exiting..."; debug "script run as root, exiting"; exit 0) && exit 0) && exit 1
