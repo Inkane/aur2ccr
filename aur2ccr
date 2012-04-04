@@ -296,7 +296,7 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
 
 namechange() {  # companion function to namelookup()
   debug "namechange('$@')"
-  namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[(\s'\"]*\)${apkgname}\([\s'\")]\)/\1${cpkgname}\2/g; s/\(['\"]\)${apkgname}\(['\"]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
+  namelookup $1 && sed -i "s/\(^[^ ]*depends=.*[( '\"]*\)${apkgname}\([ '\")]\)/\1${cpkgname}\2/g; s/\([ '\"]\)${apkgname}\([ '\"]\)/\1${cpkgname}\2/g" PKGBUILD || return 1
   debug "new PKGBUILD: $(cat PKGBUILD)"
   depends
 }
