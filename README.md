@@ -20,7 +20,9 @@ This will install the script itself, the needed configuration files, and the **a
 
 # Configuration:
 To configure aur2ccr, just run
+
     aur2ccr --setup
+
 Or edit the configuration files in /etc/aur2ccr/ by hand. All configuration files in /etc/aur2ccr/ can also be copied to ~/.aur2ccr/. Local conf files take precedence over global ones. 
 
 # Documentation:
