@@ -174,5 +174,8 @@ if_expression << (
  | Group(Literal("if") + QuotedString(quoteChar="[", endQuoteChar="]", multiline=True) + "then" + OneOrMore(pkgbuildline) + Optional("else" + OneOrMore(pkgbuildline)) + "fi")
 )
 
+if_comparision = QuotedString(quoteChar="[", endQuoteChar="]", multiline=True)
+
+
 pb = OneOrMore(pkgbuildline)
 parser = OneOrMore(pkgbuildline) + stringEnd

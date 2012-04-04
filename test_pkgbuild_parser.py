@@ -1,10 +1,10 @@
-import unittest2
+import unittest
 import glob
 import pkgbuild_parser
 from pyparsing import ParseException
 
 
-class ParseTest(unittest2.TestCase):
+class ParseTest(unittest.TestCase):
 
     def test_can_parse(self):
         for f in glob.glob("./pkgbuilds/*"):
@@ -55,4 +55,4 @@ class ParseTest(unittest2.TestCase):
 
 
 if __name__ == "__main__":
-    unittest2.main()
+    unittest.main()
