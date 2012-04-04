@@ -5,6 +5,7 @@ This script uses the information on converting Arch/AUR packages to CCR source p
 
 # Todo:
 See issues (https://github.com/redhat69/aur2ccr/issues/).
+This script is currently undergoing a transition from bash to Python, so new features will not be implemented until that change has been completed. 
 
 # Installation:
 Installation for aur2ccr is simple. Just run
