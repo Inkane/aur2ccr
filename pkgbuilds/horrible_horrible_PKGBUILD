@@ -8,7 +8,7 @@ pkgrel=1
 pkgdesc="The horrible yet entirely valid test $_pkgname"
 arch=(i686 x86_64)
 url="http://www.example.com/pickles/${_pkgname=5400}${CARCH-any}/"
-license=( GPL) depends=(libidn==24 'apricots<=9' 'pickles>=v9'  ) 
+license=( GPL) depends=(libidn=24 'apricots<=9' 'pickles>=v9'  ) 
 makedepends=(
 	perl
 ) 
