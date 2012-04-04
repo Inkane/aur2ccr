@@ -1,19 +1,19 @@
 # $Id: PKGBUILD 555555 5012-05-55 155:010:95Z pickles $
 # Maintainer: Anybody But (me) <pickles@example.org>
 # THIS IS NOT A REAL PKGBUILD!!!!!
+pkgver=10.5.J
 pkgname=horrible # ohno!
 _pkgname=PKGBUILD
-pkgver=10.5.J
 pkgrel=1
 pkgdesc="The horrible yet entirely valid test $_pkgname"
 arch=(i686 x86_64)
 url="http://www.example.com/pickles/${_pkgname=5400}${CARCH-any}/"
 license=( GPL) depends=(libidn=24 'apricots<=9' 'pickles>=v9'  ) 
+install="${pkgname/-appmenu/}.install"
 makedepends=(
 	perl
 ) 
   	 source=(http://ftp.example.org/debian/pool/main/a/nutcase/${_pkgname[@]}_$pkgver.tar.gz)
-md5sums=(82c4c93ea589ce1dad1cb02ef04c08b9	)
 
 function build { cd "$srcdir/"$pkgname-$pkgver;make prefix=/usr; }
 
@@ -26,3 +26,5 @@ function package(){
   cd $startdir/src/$pkgname-${pkgver}
   make prefix=/usr BASEDIR="${pkgdir}" install-whois
 }
+
+md5sums=(82c4c93ea589ce1dad1cb02ef04c08b9	)
