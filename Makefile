@@ -1,10 +1,10 @@
 # Makefile for aur2ccr and aur2ccr-unstable
 manpages = aur2ccr.8.gz
-binfiles = aur2ccr getmirrors.sh
+binfiles = aur2ccr getmirrors.py
 unstable = aur2ccr-unstable
 configs = names.conf aur2ccr.conf archrepos.pacman.conf
-others = aur2ccr.8 Makefile README
-allfiles = $(binfiles) $(configs) $(manpages) $(others)
+others = aur2ccr.8 Makefile
+allfiles = $(binfiles) $(configs) $(manpages) $(others) README.md TODO
 
 all: man $(allfiles)
 	quiet=1 python2 getmirrors.py
