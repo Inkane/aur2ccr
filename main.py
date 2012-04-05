@@ -21,5 +21,10 @@ def do(pkgbuild_file):
             tracker.track_package(dep)
 
 if __name__ == "__main__":
-    do(sys.argv[1])
+    try:
+        do(sys.argv[1])
+    except IndexError:
+        print("you need to specify a PKGBUILD!\n")
+        sys.exit(1)
+
     print tracker.yet_to_install
