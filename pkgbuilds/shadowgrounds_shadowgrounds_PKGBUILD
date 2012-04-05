@@ -1,0 +1,99 @@
+# Maintainer: Samir Benmendil <samir.benmendil[at]gmail[dot]com>
+# Contributer: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributer: jimmy-6 <jakub.jarozek {at} gmail.com>
+ 
+pkgname=shadowgrounds
+pkgver=beta12_update1
+pkgrel=1
+pkgdesc="[Humble Bundle Frozenbyte,Frozen Synapse] A 3D sci-fi alien shooter"
+url="http://shadowgroundsgame.com/"
+license=('custom: "commercial"')
+arch=('i686' 'x86_64')
+makedepends=('unzip')
+source=('shadowgrounds.sh' 'shadowgrounds-launcher.sh' 'shadowgrounds.desktop')
+md5sums=('db283956f1336777a3940a8e71e67098'
+         '1846958138e5de44173b66b1ad4d1f30'
+         'd05af923259375bb68ad0d53efe793d1')
+ 
+ [ $CARCH = 'i686' ]   && depends=('libglade' 'mesa' 'openal')
+if [ $CARCH = 'x86_64' ]; then
+    depends=('lib32-libglade' 'lib32-mesa' 'lib32-openal')
+     [ -f "/usr/lib/libpulse.so" ] && depends=("${depends[@]}" 'lib32-libpulse' 'lib32-alsa-plugins')
+    pacman -Q nvidia-utils >/dev/null 2>&1
+     [ $? = 0 ] && depends=("${depends[@]}" 'lib32-nvidia-utils')
+fi 
+ 
+PKGEXT="pkg.tar"
+_archive="shadowgroundsUpdate1.run"
+_archive_md5='7c9913f754168742973edfeb66ba8f1c'
+ 
+_bundle=('humblebundlefrozen' 'humblebundlesynapse')
+ 
+_humble() {
+  for bundle in ${_bundle[@]}; do
+    case ${bundle} in
+      "humblebundle"*) _key="_humblebundle${bundle:12}key";;
+      *) continue;;
+    esac
+    if [ -n "${!_key}" ]; then
+      echo "Getting your unique ${pkgname} download location."
+      _uri="$(curl -s "http://www.humblebundle.com/downloads?key=${!_key}" | grep "${_archive}" | cut -d "'" -f 10)"
+      break
+    else
+      echo "\"${_key}\" environment variable required for download handling not found."
+    fi
+  done
+  if [ -z "${!_key}" -a ! -f "${startdir}/${_archive}" ]; then
+    echo "Unable to download \"${_archive}\"."
+    exit 1
+  fi
+  unset _key _bundle
+}
+ 
+build() {
+  _humble
+ 
+  cd "${srcdir}"
+  if [ ! -f "${_archive}" ]; then
+    wget $_uri
+    mv ${_archive}* ${_archive}
+  fi
+  if ! echo "${_archive_md5}  ${_archive}" | md5sum -c --quiet; then
+    echo "Invalid checksum for ${_archive}"
+    return 1
+  fi
+  unzip -o "${_archive}" -d "${pkgname}" || true
+  unset _archive _archive_md5 _uri
+}
+ 
+package(){
+ 
+  # directories
+  install -d ${pkgdir}/opt/${pkgname}
+  cd ${srcdir}/${pkgname}
+  rm lib32/libopenal* lib32/libasound* lib32/libvorbis* lib32/libogg*
+  cp -dpr --no-preserve=ownership data Config lib32 Profiles "${pkgdir}/opt/${pkgname}"
+ 
+  #fix permissions
+  find ${pkgdir}/opt/${pkgname} -type d -exec chmod 755 {} \;
+  find ${pkgdir}/opt/${pkgname}/{Config,data,Profiles} -type f -exec chmod 644 {} \;
+  chmod -R 755 ${pkgdir}/opt/${pkgname}/lib32
+ 
+  #other data files
+  install -Dm644 data1.fbz shadowgrounds-launcher.glade shadowgrounds-logo.png \
+                 Shadowgrounds.xpm ${pkgdir}/opt/${pkgname}
+ 
+  # startup scripts
+  install -Dm755 ${srcdir}/shadowgrounds.sh ${pkgdir}/usr/bin/shadowgrounds
+  install -Dm755 ${srcdir}/shadowgrounds-launcher.sh ${pkgdir}/usr/bin/shadowgrounds-launcher
+ 
+  # execs
+  install -Dm755 shadowgrounds-bin ${pkgdir}/opt/${pkgname}/shadowgrounds-bin
+  install -Dm755 shadowgrounds-launcher ${pkgdir}/opt/${pkgname}/shadowgrounds-launcher
+ 
+  # desktop entry
+  install -Dm644 ${srcdir}/shadowgrounds.desktop ${pkgdir}/usr/share/applications/shadowgrounds.desktop
+ 
+}
+
+
