@@ -11,6 +11,7 @@ class variable_tracker:
 
     def __init__(self):
         self.variables = dict()
+        self.base_var = Literal("$") + Word(alphanums) + Optional("[" + Word(alphanums + "*@") + "]")
 
     def track_variable(self, varname, value):
         self.variables[varname] = value
@@ -19,6 +20,10 @@ class variable_tracker:
         if "$" not in expression:
             # abort if there is no variable
             raise pyparsing.ParseException
+        # what needs to be substituted:
+        # $foo, "$foo"
+        # ${foo}, "${foo}"
+        # ${foo[1]}, ${foo[@]}, ${foo[*]}
 
 
 # TODO: accept only the neccessary characters
