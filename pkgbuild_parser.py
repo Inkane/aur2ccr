@@ -56,8 +56,9 @@ valid_arch = opQuotedString(Word(valname))
 
 arch = Array("arch", OneOrMore(valid_arch), valid_arch)
 
-
-license = Array("license", OneOrMore(opQuotedString(Word(ac_chars))), opQuotedString(Word(ac_chars)))
+# helper defintion for license, to allow license=('custom: "commercial"')
+tmp_lic = opQuotedString(Word(ac_chars)) | opQuotedString(Literal("custom") + ":" + opQuotedString(Word(ac_chars)))
+license = Array("license", OneOrMore(tmp_lic), tmp_lic)
 
 # TODO: replace it with a better url parser
 url = Literal("url=") + opQuotedString(Word(printables))
@@ -121,10 +122,10 @@ comment = Combine("#" + restOfLine)
 
 # variables, arrays, functions, etc...
 safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars.replace(";", ""))))
-var_array = "(" + opQuotedString(Word(ac_chars + " =")) + ")"
+var_array = "(" + OneOrMore(opQuotedString(Word(ac_chars + " ="))) + ")"
 bad_variable = Combine(Word(ac_chars) + "=" + (var_array | opQuotedString(Word(ac_chars))))
 
-generic_function = function_head(Word(alphas, alphanums + "_"))
+generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function_body
 
 if_expression = Forward()
 statement_seperator = Literal(";")
@@ -165,16 +166,22 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | screenshot.setResultsName("screenshot")
         | statement_seperator)
 
-statement_block << nestedExpr(opener="{", closer="}", content=OneOrMore(pkgbuildline))
+statement_block << (nestedExpr(opener="{", closer="}", content=OneOrMore(pkgbuildline)) | OneOrMore(pkgbuildline))
 
 # TODO: there has to be a better way...
-if_expression << (
-   Group("[[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
- | Group("[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
- | Group(Literal("if") + QuotedString(quoteChar="[", endQuoteChar="]", multiline=True) + "then" + OneOrMore(pkgbuildline) + Optional("else" + OneOrMore(pkgbuildline)) + "fi")
-)
+#if_expression << (
+   #Group("[[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
+ #| Group("[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
+ #| Group(Literal("if") + QuotedString(quoteChar="[", endQuoteChar="]", multiline=True) + "then" + OneOrMore(pkgbuildline) + Optional("else" + OneOrMore(pkgbuildline)) + "fi")
+#)
 
-if_comparision = QuotedString(quoteChar="[", endQuoteChar="]", multiline=True)
+condition = ((QuotedString(quoteChar="[[", endQuoteChar="]]", multiline=True)
+           | QuotedString(quoteChar="[", endQuoteChar="]", multiline=True)) + ZeroOrMore(";"))
+bool_operator = Literal("&&") | Literal("||")
+con_then = condition + Literal("then") + statement_block
+if_expression << ((condition + bool_operator + (statement_block))
+        | Literal("if") + con_then + ((ZeroOrMore("elif" + con_then))
+                                     | Optional("else" + statement_block)) + "fi")
 
 
 pb = OneOrMore(pkgbuildline)
