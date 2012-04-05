@@ -32,7 +32,8 @@ valname = alphanums + "-_${}+"
 # version number
 # vnum = Word(nums) + Optional(Word(alphanums + ".-_"))
 # It seems like j3.134l.i is a valid version number...
-vnum = Word(alphanums + "._")
+# It is not allowed, but some PKGBUILDs seem to contain hyphens (freeorion)
+vnum = Word(alphanums + "._-")
 
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
@@ -68,8 +69,8 @@ groups = Array("groups", OneOrMore(opQuotedString(Word(valname))), opQuotedStrin
 
 # all about dependencies
 # normal dependency format: name + [qualifier] + version
-dependency = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
-             + Optional(Group(compare_operators + vnum)).setResultsName("pversion", listAllMatches=True)))
+dependency = (opQuotedString((val_package_name.setResultsName("pname", listAllMatches=True)
+             + Optional(Group(compare_operators + vnum)).setResultsName("pversion", listAllMatches=True))))
 # descriptive dependency: name + [qualifier] + version + ':' + description
 descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
@@ -130,6 +131,8 @@ generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function
 if_expression = Forward()
 statement_seperator = Literal(";")
 statement_block = Forward()
+bash_functions = oneOf("echo sed awk") + restOfLine
+
 
 # TODO: match all possible PKGBUILDs
 pkgbuildline = (pkgname.setResultsName("pkgname")
@@ -164,6 +167,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | if_expression
         | generic_function
         | screenshot.setResultsName("screenshot")
+        | bash_functions  # those shouldn't be in PKGBUILDs outside of build
         | statement_seperator)
 
 statement_block << (nestedExpr(opener="{", closer="}", content=OneOrMore(pkgbuildline)) | OneOrMore(pkgbuildline))
@@ -181,7 +185,7 @@ bool_operator = Literal("&&") | Literal("||")
 con_then = condition + Literal("then") + statement_block
 if_expression << ((condition + bool_operator + (statement_block))
         | Literal("if") + con_then + ((ZeroOrMore("elif" + con_then))
-                                     | Optional("else" + statement_block)) + "fi")
+                                     + Optional("else" + statement_block)) + "fi")
 
 
 pb = OneOrMore(pkgbuildline)
