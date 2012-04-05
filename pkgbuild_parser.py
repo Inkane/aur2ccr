@@ -1,12 +1,28 @@
+import pyparsing
 from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString, White
 # import logging
 
 
 # define some utility classes/functions/constants
 
+# TODO: decide if this should be in an extra file
+class variable_tracker:
+    """used to track variables in a shell """
+
+    def __init__(self):
+        self.variables = dict()
+
+    def track_variable(self, varname, value):
+        self.variables[varname] = value
+
+    def substitute_variable(self, expression):
+        if "$" not in expression:
+            # abort if there is no variable
+            raise pyparsing.ParseException
+
 
 # TODO: accept only the neccessary characters
-ac_chars = printables.replace("(", "").replace(")", "").replace("'", "").replace('"', "").replace("=", "")
+ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*+,-./:;<>?@[\\]^_`{|}~'
 
 
 # TODO: recalculate the need for a global variable
@@ -129,6 +145,7 @@ bad_variable = Combine(Word(ac_chars) + "=" + (var_array | opQuotedString(Word(a
 generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function_body
 
 if_expression = Forward()
+case_statement = Forward()
 statement_seperator = Literal(";")
 statement_block = Forward()
 bash_functions = oneOf("echo sed awk") + restOfLine
@@ -165,6 +182,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | safe_variable.setResultsName("variable")
         | bad_variable.setResultsName("variable")
         | if_expression
+        | case_statement
         | generic_function
         | screenshot.setResultsName("screenshot")
         | bash_functions  # those shouldn't be in PKGBUILDs outside of build
@@ -173,11 +191,6 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
 statement_block << (nestedExpr(opener="{", closer="}", content=OneOrMore(pkgbuildline)) | OneOrMore(pkgbuildline))
 
 # TODO: there has to be a better way...
-#if_expression << (
-   #Group("[[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
- #| Group("[" + OneOrMore(Word(alphanums + r'''$=_-'"''')) + "]" + (Literal("&&") | Literal("||")) + (statement_block | pkgbuildline))
- #| Group(Literal("if") + QuotedString(quoteChar="[", endQuoteChar="]", multiline=True) + "then" + OneOrMore(pkgbuildline) + Optional("else" + OneOrMore(pkgbuildline)) + "fi")
-#)
 
 condition = ((QuotedString(quoteChar="[[", endQuoteChar="]]", multiline=True)
            | QuotedString(quoteChar="[", endQuoteChar="]", multiline=True)) + ZeroOrMore(";"))
@@ -187,6 +200,8 @@ if_expression << ((condition + bool_operator + (statement_block))
         | Literal("if") + con_then + ((ZeroOrMore("elif" + con_then))
                                      + Optional("else" + statement_block)) + "fi")
 
+case_statement << (Literal("case") + opQuotedString(Word(ac_chars)) + "in"
+                   + OneOrMore(opQuotedString(Word(ac_chars)) + ")" + OneOrMore(pkgbuildline)) + "esac")
 
 pb = OneOrMore(pkgbuildline)
 parser = OneOrMore(pkgbuildline) + stringEnd
