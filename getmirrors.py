@@ -23,10 +23,10 @@ try:
 except KeyError:
     paconf = "./archrepos.pacman.conf"
 
-# future versions should use a commandline argument
-try:
-    quiet = (os.environ["quiet"] == "1")
-except KeyError:
+# quiet mode
+if "--quiet" in sys.argv:
+    quiet = True
+else:
     quiet = False
 
 # all countries accepted by the arch website
@@ -45,10 +45,10 @@ valid_countries = [
  ]
 alt_country_names = SmartDict() # store alternate country names
 alt_country_names["United Kingdom"] = "Great Britain"
+alt_country_names["Argentina"] = "Brazil"
 
 # the webadresses of duckduckgo and arch linux 
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
-# American proxy, will be removed when it works
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
 
@@ -78,10 +78,11 @@ def get_location():
                 except AttributeError:
                     # this should never fail until the duckduckgo website changes
                     print(line, file=sys.stderr)
-                    sys.exit(1)
+                    print("Oh no! DuckDuckGo doesn't know where you live!\nWe'll use a generic server for now. For better performance you should run aur2ccr --setup\n")
+                    return "Any"
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
-    # test if their is a mirror list for the country
+    # test if there is a mirror list for the country
     if country not in valid_countries:
         country = alt_country_names[country]
     return country
