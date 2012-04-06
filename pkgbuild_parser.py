@@ -1,5 +1,6 @@
 import pyparsing
 from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString, White
+import re
 # import logging
 
 
@@ -11,7 +12,15 @@ class variable_tracker:
 
     def __init__(self):
         self.variables = dict()
-        self.base_var = Literal("$") + Word(alphanums) + Optional("[" + Word(alphanums + "*@") + "]")
+        #_base_var = Literal("$") + (("{" + Word(alphanums + "_-").setResultsName("var_name", listAllMatches=True) + Optional("[" + Word(nums + "*@") + "]") + "}")
+                 #| Word(alphanums))
+        _simple_var = Literal("$") + Word(alphanums + "_-")
+        _brace_substitute_part = Optional("/" + (Word(alphanums + "_-").setResultsName("orig"))
+                                 + Optional("/" + Word(alphanums + "_-!?/\\").setResultsName("new")))
+        _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + "}"
+        _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
+        _base_var = _simple_var | _brace_var
+        self.var = ('"' + _base_var + '"') | _base_var
 
     def track_variable(self, varname, value):
         self.variables[varname] = value
