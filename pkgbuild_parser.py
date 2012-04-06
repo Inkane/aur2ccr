@@ -12,15 +12,21 @@ class variable_tracker:
 
     def __init__(self):
         self.variables = dict()
-        #_base_var = Literal("$") + (("{" + Word(alphanums + "_-").setResultsName("var_name", listAllMatches=True) + Optional("[" + Word(nums + "*@") + "]") + "}")
-                 #| Word(alphanums))
+
+        def substitute_variables(s, l, t):
+            print t[1]
+            if t[1] in self.variables:
+                return self.variables[t[1]]
+
         _simple_var = Literal("$") + Word(alphanums + "_-").setResultsName("varname")
         _brace_substitute_part = Optional("/" + (Word(alphanums + "_-").setResultsName("orig"))
                                  + Optional("/" + Word(alphanums + "_-!?/\\").setResultsName("new")))
         _array_access = "[" + Word(nums + "@*").setResultsName("position") + "]"
+        # TODO: parse array correctly
         _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + Optional(_array_access) + "}"
         _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
         _base_var = _simple_var | _brace_var
+        _base_var.setParseAction(substitute_variables)
         self.var = ('"' + _base_var + '"') | _base_var
 
     def track_variable(self, varname, value):
@@ -29,9 +35,7 @@ class variable_tracker:
 
     def substitute_variable(self, expression):
         """replace all variables with its value, raises an error if one does not exist"""
-        if "$" not in expression:
-            # abort if there is no variable
-            raise pyparsing.ParseException
+        return self.var.transformString(expression)
         #for variable in self.var.searchString(expression)
         # what needs to be substituted:
         # $foo, "$foo"
