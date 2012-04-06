@@ -1,2 +1,6 @@
 *.pyc
 .ropeproject
+<<<<<<< HEAD
+=======
+.__pycache__
+>>>>>>> a817080f9e4272b65e2f60966385d53551a8dc47

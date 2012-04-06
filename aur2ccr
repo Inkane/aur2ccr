@@ -591,18 +591,18 @@ setup() {  # perform some setup-related stuff interactively
   msg "Enter your maintainer information, in the format below:"
   msg "My Name (optional nickname) <email_address@example.com>"
   msg "For example: jimbob <jimbob54@beispiel.com>"
-  msg -n ""; read maintainer && (
+  msg -n ""; read -e maintainer && (
     if [[ -z "$maintaintainer" ]]; then source "$a2cc"; fi
     if grep -q "^[# ]*maintainer=.*" "$a2cc"; then sed -i "s,^[# ]*maintainer=.*,maintainer='$maintainer'," "$a2cc"
     else echo "maintainer='$maintainer'" >> "$a2cc"; fi
   )
-  msg -n "Always move *.src.tar.gz packages to the working dir? [y/N] "; read consolidate && (
+  msg -n "Always move *.src.tar.gz packages to the working dir? [y/N] "; read -e consolidate && (
     if [[ $consolidate == yes || $consolidate == Y || $consolidate == y || $consolidate == 1 ]]; then consolidate=1
     else consolidate=0; fi
     if grep -q "^[# ]*consolidate=.*" "$a2cc"; then sed -i "s/^[# ]*consolidate=.*/consolidate=$consolidate/" "$a2cc"
     else echo "consolidate=$consolidate" >> "$a2cc"; fi
   )
-  msg -n "Always edit PKGBUILDs in \$EDITOR ($EDITOR)? [y/N] "; read edit && (
+  msg -n "Always edit PKGBUILDs in \$EDITOR ($EDITOR)? [y/N] "; read -e edit && (
     if [[ $edit == yes || $edit == Y || $edit == y || $edit == 1 ]]; then edit=1
     else edit=0; fi
     if grep -q "^[# ]*edit=.*" "$a2cc"; then sed -i "s/^[# ]*edit=.*/edit=$edit/" "$a2cc"
@@ -610,7 +610,7 @@ setup() {  # perform some setup-related stuff interactively
   )
   msg "Enter the full path to your CCR dir (eg: $HOME/pkgbuilds)"
   msg "Default: wherever you run the script."
-  msg -n ""; read startdir && (
+  msg -n ""; read -e startdir && (
     if [[ -d "$startdir" ]]; then findir="$startdir"
     else source "$a2cc"
       if [[ -z "$startdir" ]]; then startdir='$(pwd)'; fi
