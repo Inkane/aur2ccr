@@ -22,7 +22,6 @@ class variable_tracker:
         _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
         _base_var = _simple_var | _brace_var
         self.var = ('"' + _base_var + '"') | _base_var
-        self.var("variable")
 
     def track_variable(self, varname, value):
         """track a variable, overriding previous existing values"""
