@@ -17,7 +17,8 @@ class variable_tracker:
         _simple_var = Literal("$") + Word(alphanums + "_-")
         _brace_substitute_part = Optional("/" + (Word(alphanums + "_-").setResultsName("orig"))
                                  + Optional("/" + Word(alphanums + "_-!?/\\").setResultsName("new")))
-        _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + "}"
+        _array_access = "[" + Word(nums + "@*") + "]"
+        _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + Optional(_array_access) + "}"
         _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
         _base_var = _simple_var | _brace_var
         self.var = ('"' + _base_var + '"') | _base_var
