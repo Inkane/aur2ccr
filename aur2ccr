@@ -660,8 +660,8 @@ usage() {
   echo 
   echo "For debugging, use: debug=1 $(basename $0) [OPTIONS] [PACKAGES]"
   echo
-  echo "Report bugs at: <https://github.com/redhat69/aur2ccr/issues/>"
-  echo "aur2ccr home: <https://github.com/redhat69/aur2ccr/>" ; debug "exiting..."
+  echo "Report bugs at: <https://github.com/ccr-tools/aur2ccr/issues/>"
+  echo "aur2ccr home: <https://github.com/ccr-tools/aur2ccr/>" ; debug "exiting..."
   exit 0
 }
 
