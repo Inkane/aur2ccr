@@ -13,10 +13,20 @@ class variable_tracker:
     def __init__(self):
         self.variables = dict()
 
+        class VariableNotFoundException(Exception):
+            """raised when a variable was used before asignment"""
+
         def substitute_variables(s, l, t):
-            print t[1]
-            if t[1] in self.variables:
-                return self.variables[t[1]]
+            # TODO: get rid of the exception hack
+            try:
+                if t[1] in self.variables:
+                    return self.variables[t[1]]
+                else:
+                    raise VariableNotFoundException("{} was not declared!".format(t[1]))
+            except IndexError:
+                if t[0] in self.variables:
+                    return self.variables[t[0]]
+            raise VariableNotFoundException("{} was not declared!".format(t[0]))
 
         _simple_var = Literal("$") + Word(alphanums + "_-").setResultsName("varname")
         _brace_substitute_part = Optional("/" + (Word(alphanums + "_-").setResultsName("orig"))
@@ -25,16 +35,16 @@ class variable_tracker:
         # TODO: parse array correctly
         _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + Optional(_array_access) + "}"
         _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
-        _base_var = _simple_var | _brace_var
-        _base_var.setParseAction(substitute_variables)
-        self.var = ('"' + _base_var + '"') | _base_var
+        self.base_var = _simple_var | _brace_var
+        self.var = (Literal('"').suppress() + self.base_var + Literal('"').suppress()) | self.base_var
+        self.var.addParseAction(substitute_variables)
 
     def track_variable(self, varname, value):
         """track a variable, overriding previous existing values"""
         self.variables[varname] = value
 
     def substitute_variable(self, expression):
-        """replace all variables with its value, raises an error if one does not exist"""
+        """replace all variables with their respective values, raises an error if one does not exist"""
         return self.var.transformString(expression)
         #for variable in self.var.searchString(expression)
         # what needs to be substituted:
@@ -42,17 +52,10 @@ class variable_tracker:
         # ${foo}, "${foo}"
         # ${foo[1]}, ${foo[@]}, ${foo[*]}
 
+var = variable_tracker()
 
 # TODO: accept only the neccessary characters
 ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*+,-./:;<>?@[\\]^_`{|}~'
-
-
-# TODO: recalculate the need for a global variable
-class expand_variable():
-    """class which is needed to replace variables"""
-
-    def __init__(self):
-        self.vars = {}
 
 
 def opQuotedString(pattern):
