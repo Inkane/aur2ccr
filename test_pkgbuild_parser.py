@@ -7,7 +7,7 @@ from pyparsing import ParseException
 class ParseTest(unittest.TestCase):
 
     def test_can_parse(self):
-        for f in glob.glob("./pkgbuilds/*"):
+        for f in glob.glob("./pkgbuilds/valid/*"):
             try:
                 pkgbuild_parser.parser.parseFile(f)
             except ParseException:
@@ -16,17 +16,17 @@ class ParseTest(unittest.TestCase):
     def test_maintainer(self):
         # maintainer should be Inkane
         maintainer_Inkane = [
-            "./pkgbuilds/pd_pd_PKGBUILD",
-            "./pkgbuilds/vimpager_vimpager_PKGBUILD",
-            "./pkgbuilds/setconf_setconf_PKGBUILD",
-            "./pkgbuilds/libdesktop-agnostic_libdesktop-agnostic_PKGBUILD",
-            "./pkgbuilds/taskwarrior_taskwarrior_PKGBUILD",
-            "./pkgbuilds/e4rat-preload-lite_e4rat-preload-lite_PKGBUILD",
-            "./pkgbuilds/g15daemon_g15daemon_PKGBUILD",
-            "./pkgbuilds/freemind-unstable_freemind-unstable_PKGBUILD",
-            "./pkgbuilds/kdeplasma-applets-wolframalpha_kdeplasma-applets-wolframalpha_PKGBUILD",
-            "./pkgbuilds/xmonad_xmonad_PKGBUILD",
-            "./pkgbuilds/fim_fim_PKGBUILD"
+            "./pkgbuilds/valid/pd_pd_PKGBUILD",
+            "./pkgbuilds/valid/vimpager_vimpager_PKGBUILD",
+            "./pkgbuilds/valid/setconf_setconf_PKGBUILD",
+            "./pkgbuilds/valid/libdesktop-agnostic_libdesktop-agnostic_PKGBUILD",
+            "./pkgbuilds/valid/taskwarrior_taskwarrior_PKGBUILD",
+            "./pkgbuilds/valid/e4rat-preload-lite_e4rat-preload-lite_PKGBUILD",
+            "./pkgbuilds/valid/g15daemon_g15daemon_PKGBUILD",
+            "./pkgbuilds/valid/freemind-unstable_freemind-unstable_PKGBUILD",
+            "./pkgbuilds/valid/kdeplasma-applets-wolframalpha_kdeplasma-applets-wolframalpha_PKGBUILD",
+            "./pkgbuilds/valid/xmonad_xmonad_PKGBUILD",
+            "./pkgbuilds/valid/fim_fim_PKGBUILD"
                 ]
         accept_maintainer = {
             "# Maintainer: John Doe <j.doe@xample.com>": "# Maintainer: John Doe <j.doe@xample.com>",
