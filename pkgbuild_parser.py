@@ -58,8 +58,11 @@ var = variable_tracker()
 ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*+,-./:;<>?@[\\]^_`{|}~'
 
 
-def opQuotedString(pattern):
-    return "'" + pattern + "'" | pattern | '"' + pattern + '"'
+def opQuotedString(pattern, supress_quotes=False):
+    "Matches a pattern surrounded by zero or one quote characters. Removes them if supress_quotes is True"
+    snglquote = Literal("'").suppress() if supress_quotes else Literal("'")
+    dblquote = Literal('"').suppress() if supress_quotes else Literal('"')
+    return snglquote + pattern + snglquote | pattern | dblquote + pattern + dblquote
 
 
 def Array(name, body, body2=None):
@@ -142,11 +145,11 @@ install = Combine(Literal("install=") + ZeroOrMore(opQuotedString(Optional("!") 
 changelog = Combine(Literal("changelog=") + ZeroOrMore(opQuotedString(Word(valname))))
 
 # TODO better parsing, allow filename::url, but forbid fi:lename
-source = Array("source", ZeroOrMore(opQuotedString(Word(ac_chars + '='))), opQuotedString(Word(ac_chars + '=')))
+source = Array("source", ZeroOrMore(opQuotedString(Word(ac_chars + '=${}'))), opQuotedString(Word(ac_chars + '=')))
 
 noextract = Literal("noextract=(") + ZeroOrMore(opQuotedString(Word(ac_chars))) + ")"
 valid_chksums = oneOf("sha1sums sha256sums sha384sums sha512sums md5sums")
-chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums))) + ")"
+chksums = valid_chksums + "=(" + ZeroOrMore(opQuotedString(Word(alphanums + "$_-"))) + ")"
 
 
 # TODO: improve function parsing
@@ -163,9 +166,14 @@ maintainer = Combine(Literal("#") + Optional(White()) + Literal("Maintainer:") +
 comment = Combine("#" + restOfLine)
 
 # variables, arrays, functions, etc...
-safe_variable = Combine("_" + Word(ac_chars) + "=" + opQuotedString(Word(ac_chars.replace(";", ""))))
+var_result = opQuotedString(Word(ac_chars.replace(";", "")), True)
+safe_var_name = "_" + Word(ac_chars)
+safe_variable = Combine(safe_var_name("var_name") + "=" + var_result("var_result"))
 var_array = "(" + OneOrMore(opQuotedString(Word(ac_chars + " ="))) + ")"
-bad_variable = Combine(Word(ac_chars) + "=" + (var_array | opQuotedString(Word(ac_chars))))
+bad_var_name = Word(ac_chars)
+bad_variable = Combine(bad_var_name("var_name") + "=" + (var_array | var_result("var_result")))
+variable = safe_variable | bad_variable
+variable.setParseAction(lambda x: var.track_variable(x.var_name, x.var_result))
 
 generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function_body
 
@@ -173,7 +181,8 @@ if_expression = Forward()
 case_statement = Forward()
 statement_seperator = Literal(";")
 statement_block = Forward()
-bash_functions = oneOf("echo sed awk") + restOfLine
+# pacman is for shadowground
+bash_functions = oneOf("echo sed awk pacman") + restOfLine
 
 
 # TODO: match all possible PKGBUILDs
@@ -204,8 +213,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | package.setResultsName("package")
         | maintainer.setResultsName("maintainer")
         | comment.setResultsName("comment", listAllMatches=True)
-        | safe_variable.setResultsName("variable")
-        | bad_variable.setResultsName("variable")
+        | variable.setResultsName("variable")
         | if_expression
         | case_statement
         | generic_function
