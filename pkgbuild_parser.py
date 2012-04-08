@@ -7,7 +7,7 @@ import re
 # define some utility classes/functions/constants
 
 # TODO: decide if this should be in an extra file
-class variable_tracker:
+class VariableTracker:
     """used to track variables in a shell """
 
     def __init__(self):
@@ -52,17 +52,21 @@ class variable_tracker:
         # ${foo}, "${foo}"
         # ${foo[1]}, ${foo[@]}, ${foo[*]}
 
-var = variable_tracker()
+var = VariableTracker()
 
 # TODO: accept only the neccessary characters
 ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*+,-./:;<>?@[\\]^_`{|}~'
 
 
-def opQuotedString(pattern, supress_quotes=False):
+def opQuotedString(pattern, supress_quotes=False, combine=False):
     "Matches a pattern surrounded by zero or one quote characters. Removes them if supress_quotes is True"
     snglquote = Literal("'").suppress() if supress_quotes else Literal("'")
     dblquote = Literal('"').suppress() if supress_quotes else Literal('"')
-    return snglquote + pattern + snglquote | pattern | dblquote + pattern + dblquote
+    if combine:
+        expression = Combine(snglquote + pattern + snglquote) | Combine(pattern) | Combine(dblquote + pattern + dblquote)
+    else:
+        expression = snglquote + pattern + snglquote | pattern | dblquote + pattern + dblquote
+    return expression
 
 
 def Array(name, body, body2=None):
@@ -82,8 +86,8 @@ vnum = Word(alphanums + "._-")
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
 
-pkgname = Literal("pkgname=") + (opQuotedString(val_package_name)
-          | "(" + opQuotedString(val_package_name) + ")")
+pkgname = Combine(Literal("pkgname=") + (opQuotedString(val_package_name)
+          | "(" + opQuotedString(val_package_name) + ")"))
 
 pkgver = Literal("pkgver=") + vnum.leaveWhitespace() + LineEnd()
 
@@ -102,7 +106,7 @@ valid_arch = opQuotedString(Word(valname))
 arch = Array("arch", OneOrMore(valid_arch), valid_arch)
 
 # helper defintion for license, to allow license=('custom: "commercial"')
-tmp_lic = opQuotedString(Word(ac_chars)) | opQuotedString(Literal("custom") + ":" + opQuotedString(Word(ac_chars)))
+tmp_lic = opQuotedString(Word(ac_chars), combine=True) | opQuotedString(Literal("custom") + Literal(":") + opQuotedString(Word(ac_chars)))
 license = Array("license", OneOrMore(tmp_lic), tmp_lic)
 
 # TODO: replace it with a better url parser
@@ -157,7 +161,7 @@ def function_head(name):
     """name must be a pyparsing object, e.g. Literal, not a string"""
     return (Optional("function") + name + "()" | Literal("function") + name)
 
-function_body = nestedExpr(opener="{", closer="}")
+function_body = pyparsing.originalTextFor(nestedExpr(opener="{", closer="}"))
 build = function_head(Literal("build")) + function_body
 check = function_head(Literal("check")) + function_body
 package = function_head(Literal("package")) + function_body
