@@ -46,7 +46,6 @@ class VariableTracker:
     def substitute_variable(self, expression):
         """replace all variables with their respective values, raises an error if one does not exist"""
         return self.var.transformString(expression)
-        #for variable in self.var.searchString(expression)
         # what needs to be substituted:
         # $foo, "$foo"
         # ${foo}, "${foo}"
@@ -117,8 +116,18 @@ groups = Array("groups", OneOrMore(opQuotedString(Word(valname))), opQuotedStrin
 
 # all about dependencies
 # normal dependency format: name + [qualifier] + version
+
+
+def sub_var_in_dep(dep):
+    """function to substitute variables in dependencies"""
+    if not "$" in dep:
+        return dep
+    else:
+        return var.substitute_variable(dep)
+
 dependency = (opQuotedString((val_package_name.setResultsName("pname", listAllMatches=True)
              + Optional(Group(compare_operators + vnum)).setResultsName("pversion", listAllMatches=True))))
+# TODO: substitute variables
 # descriptive dependency: name + [qualifier] + version + ':' + description
 descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
@@ -177,7 +186,10 @@ var_array = "(" + OneOrMore(opQuotedString(Word(ac_chars + " ="))) + ")"
 bad_var_name = Word(ac_chars)
 bad_variable = Combine(bad_var_name("var_name") + "=" + (var_array | var_result("var_result")))
 variable = safe_variable | bad_variable
-variable.setParseAction(lambda x: var.track_variable(x.var_name, x.var_result))
+# TODO use a more stable solution
+# WARNING Bad hack using some functional programming
+import operator
+variable.setParseAction(lambda x: var.track_variable(reduce(operator.add, x.var_name), x.var_result))
 
 generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function_body
 
