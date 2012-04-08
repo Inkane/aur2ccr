@@ -7,17 +7,16 @@ tracker = package_tracker.PackageTracker()
 
 def do(pkgbuild_file):
     pkgbuild = pp.parser.parseFile(pkgbuild_file)
-    print pkgbuild
-    if pkgbuild.depends.pname:
-        for dep in pkgbuild.depends.pname.asList():
+    if pkgbuild.depends and pkgbuild.depends.pname:
+        for dep in pkgbuild.depends.pname:
             tracker.track_package(dep)
 
-    if pkgbuild.optdepends.pname:
-        for dep in pkgbuild.optdepends.pname.asList():
+    if pkgbuild.optdepends and pkgbuild.optdepends.pname:
+        for dep in pkgbuild.optdepends.pname:
             tracker.track_package(dep)
 
-    if pkgbuild.makedepends.pname:
-        for dep in pkgbuild.makedepends.pname.asList():
+    if pkgbuild.makedepends and pkgbuild.makedepends.pname:
+        for dep in pkgbuild.makedepends.pname:
             tracker.track_package(dep)
 
 if __name__ == "__main__":
