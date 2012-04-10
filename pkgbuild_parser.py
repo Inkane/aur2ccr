@@ -7,7 +7,7 @@ import re
 # define some utility classes/functions/constants
 
 # TODO: decide if this should be in an extra file
-class variable_tracker:
+class VariableTracker:
     """used to track variables in a shell """
 
     def __init__(self):
@@ -46,23 +46,26 @@ class variable_tracker:
     def substitute_variable(self, expression):
         """replace all variables with their respective values, raises an error if one does not exist"""
         return self.var.transformString(expression)
-        #for variable in self.var.searchString(expression)
         # what needs to be substituted:
         # $foo, "$foo"
         # ${foo}, "${foo}"
         # ${foo[1]}, ${foo[@]}, ${foo[*]}
 
-var = variable_tracker()
+var = VariableTracker()
 
 # TODO: accept only the neccessary characters
 ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*+,-./:;<>?@[\\]^_`{|}~'
 
 
-def opQuotedString(pattern, supress_quotes=False):
+def opQuotedString(pattern, supress_quotes=False, combine=False):
     "Matches a pattern surrounded by zero or one quote characters. Removes them if supress_quotes is True"
     snglquote = Literal("'").suppress() if supress_quotes else Literal("'")
     dblquote = Literal('"').suppress() if supress_quotes else Literal('"')
-    return snglquote + pattern + snglquote | pattern | dblquote + pattern + dblquote
+    if combine:
+        expression = Combine(snglquote + pattern + snglquote) | Combine(pattern) | Combine(dblquote + pattern + dblquote)
+    else:
+        expression = snglquote + pattern + snglquote | pattern | dblquote + pattern + dblquote
+    return expression
 
 
 def Array(name, body, body2=None):
@@ -82,8 +85,8 @@ vnum = Word(alphanums + "._-")
 # a valid name for a package
 val_package_name = Combine(Word(alphas + "".join((valname, "."))))
 
-pkgname = Literal("pkgname=") + (opQuotedString(val_package_name)
-          | "(" + opQuotedString(val_package_name) + ")")
+pkgname = Combine(Literal("pkgname=") + (opQuotedString(val_package_name)
+          | "(" + opQuotedString(val_package_name) + ")"))
 
 pkgver = Literal("pkgver=") + vnum.leaveWhitespace() + LineEnd()
 
@@ -102,7 +105,7 @@ valid_arch = opQuotedString(Word(valname))
 arch = Array("arch", OneOrMore(valid_arch), valid_arch)
 
 # helper defintion for license, to allow license=('custom: "commercial"')
-tmp_lic = opQuotedString(Word(ac_chars)) | opQuotedString(Literal("custom") + ":" + opQuotedString(Word(ac_chars)))
+tmp_lic = opQuotedString(Word(ac_chars), combine=True) | opQuotedString(Literal("custom") + Literal(":") + opQuotedString(Word(ac_chars)))
 license = Array("license", OneOrMore(tmp_lic), tmp_lic)
 
 # TODO: replace it with a better url parser
@@ -113,8 +116,18 @@ groups = Array("groups", OneOrMore(opQuotedString(Word(valname))), opQuotedStrin
 
 # all about dependencies
 # normal dependency format: name + [qualifier] + version
+
+
+def sub_var_in_dep(dep):
+    """function to substitute variables in dependencies"""
+    if not "$" in dep:
+        return dep
+    else:
+        return var.substitute_variable(dep)
+
 dependency = (opQuotedString((val_package_name.setResultsName("pname", listAllMatches=True)
              + Optional(Group(compare_operators + vnum)).setResultsName("pversion", listAllMatches=True))))
+# TODO: substitute variables
 # descriptive dependency: name + [qualifier] + version + ':' + description
 descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listAllMatches=True)
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
@@ -157,7 +170,7 @@ def function_head(name):
     """name must be a pyparsing object, e.g. Literal, not a string"""
     return (Optional("function") + name + "()" | Literal("function") + name)
 
-function_body = nestedExpr(opener="{", closer="}")
+function_body = pyparsing.originalTextFor(nestedExpr(opener="{", closer="}"))
 build = function_head(Literal("build")) + function_body
 check = function_head(Literal("check")) + function_body
 package = function_head(Literal("package")) + function_body
@@ -173,7 +186,10 @@ var_array = "(" + OneOrMore(opQuotedString(Word(ac_chars + " ="))) + ")"
 bad_var_name = Word(ac_chars)
 bad_variable = Combine(bad_var_name("var_name") + "=" + (var_array | var_result("var_result")))
 variable = safe_variable | bad_variable
-variable.setParseAction(lambda x: var.track_variable(x.var_name, x.var_result))
+# TODO use a more stable solution
+# WARNING Bad hack using some functional programming
+import operator
+variable.setParseAction(lambda x: var.track_variable(reduce(operator.add, x.var_name), x.var_result))
 
 generic_function = function_head(Word(alphas + "_", alphanums + "_")) + function_body
 
