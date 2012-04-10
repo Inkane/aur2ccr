@@ -18,6 +18,25 @@ install: $(allfiles) install-man
 	install -D -m755 $(binfiles) "$(DESTDIR)/usr/bin/"
 	install -D -m644 $(configs) "$(DESTDIR)/etc/aur2ccr/"
 
+clean: 
+	rm -rf *.pyc $(manpages)
+	printf "# archrepos.pacman.conf\n# Tell pacman to look in the Arch Linux repositories. \
+# The arch (i686 or x86_64) is not really important, change it if you wish. \
+# multilib MUST be x86_64, there is no i686 multilib repo. \n\
+
+[community]
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
+
+[core]
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
+
+[extra]
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
+
+[multilib]
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64
+
+
 uninstall: # not ready for use
 	rm -rf "$(DESTDIR)/etc/aur2ccr"
 
