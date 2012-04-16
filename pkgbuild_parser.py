@@ -228,7 +228,7 @@ pkgbuildline = (pkgname.setResultsName("pkgname")
         | check.setResultsName("check")
         | package.setResultsName("package")
         | maintainer.setResultsName("maintainer")
-        | comment.setResultsName("comment", listAllMatches=True)
+        | comment.setResultsName("comment")
         | variable.setResultsName("variable")
         | if_expression
         | case_statement
