@@ -187,7 +187,7 @@ addad() {
   debug "addad('$@')"
   ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporting aur2ccr! :)"
 2i
-# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2cc&t=chakra)
+# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr&t=chakra)
 .
 wq
 EOF
