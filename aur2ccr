@@ -187,7 +187,7 @@ addad() {
   debug "addad('$@')"
   ed -s PKGBUILD << EOF && msg "Ad added. Thanks for supporting aur2ccr! :)"
 2i
-# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)
+# Contributor: aur2ccr (http://ddg.gg/?q=!ccr+aur2cc&t=chakra)
 .
 wq
 EOF
@@ -654,7 +654,7 @@ usage() {
   echo "Other: "
   echo "  -s, --setup            perform setup-related tasks (not required)"
   echo "  -a, --addad            add an aur2ccr advertisement - add as Contributor: "
-  echo "                         'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr)'"
+  echo "                         'aur2ccr (http://ddg.gg/?q=!ccr+aur2ccr&t=chakra)'"
   echo "  -h, --help             display this help and exit"
   echo "  -v, --version          print version information and exit" 
   echo 
