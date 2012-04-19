@@ -170,10 +170,11 @@ getarchname() {
 }
 
 depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
-  local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install=    # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
+  local makedepends=(); local pkgname=; local pkgbase=; local pkgver=; local pkgrel=; local url=; local arch=; local license=; local source=; local md5sums=; local srcdir=; local pkgdir=; local install=    # declare vars from the PKGBUILD as local, so aur2ccr doens't get confused
   debug "depends($@)"; debug "current dir: $(pwd; ls)"
+  depends=
   . PKGBUILD; IFS=$'\n'
-  depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e 's/=.*//' -e 's/>.*//' -e 's/<.*//'| sort -u) ); IFS=' '
+  depends=( $(echo -e "${depends[*]}\n${makedepends[*]}" | sed -e "s/=.*//; s/>.*//; s/<.*//; s/^$pkgname$//g" | sort -u) ); IFS=' '
   debug "depends=( ${depends[@]} )"
 }
 
