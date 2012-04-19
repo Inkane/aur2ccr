@@ -180,7 +180,11 @@ depends() {  # get the dependencies from the PKGBUILD - stolen from 'ccr'
 addmaintainer() {  # change maintainer info in the PKGBUILD
   debug "addmaintainer('$@')"
   sed -i 's/^# Maintainer: /# Contributor: /' PKGBUILD
-  (printf "# Maintainer: ${maintainer}\n$(cat PKGBUILD)" > PKGBUILD.1 && mv PKGBUILD.1 PKGBUILD) || return 1
+  ed -s PKGBUILD << EOF
+  1i
+# Maintainer: ${maintainer}
+.
+  wq
 }
 
 addad() {
