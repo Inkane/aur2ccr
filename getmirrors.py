@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# inspired by a bash script from Arch 
+# inspired by a bash script from Arch
 # drop in replacement for getmirrors.sh
 from __future__ import print_function
 
@@ -9,6 +9,10 @@ import urllib2
 import contextlib
 import re
 import fileinput
+import logging
+
+logging.basicConfig(level=logging.INFO, format='>>%(levelname)s:  %(message)s')
+
 
 # needed for a trick to get a mirror if the user lives in an unknown country
 class SmartDict(dict):
@@ -43,11 +47,11 @@ valid_countries = [
  'Sweden', 'Switzerland', 'Taiwan', 'Turkey', 'Ukraine',
  'United States', 'Uzbekistan', 'Any'
  ]
-alt_country_names = SmartDict() # store alternate country names
+alt_country_names = SmartDict()  # store alternate country names
 alt_country_names["United Kingdom"] = "Great Britain"
 alt_country_names["Argentina"] = "Brazil"
 
-# the webadresses of duckduckgo and arch linux 
+# the webadresses of duckduckgo and arch linux
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
 archlinux = "http://www.archlinux.org/mirrorlist/?country={}&protocol=ftp&protocol=http&ip_version=4&use_mirror_status=on"
 
@@ -57,13 +61,14 @@ def download(url):
     try:
         webfile = urllib2.urlopen(url)
     except (urllib2.URLError, urllib2.HTTPError):
-        print("Opening {} failed because of {}.".format(url,sys.exc_info()), 
+        print("Opening {} failed because of {}.".format(url, sys.exc_info()),
                 sys.stderr)
         sys.exit(2)
     return contextlib.closing(webfile)
 
 
 def get_location():
+    logging.info("Determining your location...")
     regex_country = re.compile(r"""
             ,\s # a comma followed by whitespace
               ((?P<oneword>([a-zA-Z])+?)\.) # one-word countries
@@ -74,11 +79,11 @@ def get_location():
         for line in coun_file:
             if "(your IP address)" in line:
                 try:
-                    result =  re.search(regex_country, line).groupdict()
+                    result = re.search(regex_country, line).groupdict()
                 except AttributeError:
                     # this should never fail until the duckduckgo website changes
-                    print(line, file=sys.stderr)
-                    print("Oh no! DuckDuckGo doesn't know where you live!\nWe'll use a generic server for now. For better performance you should run aur2ccr --setup\n")
+                    logging.error(line)
+                    logging.warn("Oh no! DuckDuckGo doesn't know where you live!\nWe'll use a generic server for now. For better performance you should run aur2ccr --setup\n")
                     return "Any"
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
@@ -92,11 +97,10 @@ def edit_conf(server, file=paconf):
     regex = re.compile("Server = .*\$")
     for line in fileinput.input(file, inplace=1):
         if re.match(regex, line):
-            # if the line contains Server, replace it with the new server
+            #  if the line contains Server, replace it with the new server
             print(server)
-        else: # else don't change anything
+        else:  # else don't change anything
             print(line, end="")
-
 
 
 def main():
@@ -113,20 +117,22 @@ def main():
     mirror = ""
     print("Generating pacman configuration for {}".format(paconf))
     with download(url) as mirrorfile:
+        logging.info("Determining the best mirror...")
         for line in mirrorfile:
             if "is not one of the available choiches" in line:
                 # should never happen
-                print("Something went wrong in getmirrors.py. Please report this error.", file=sys.stderr)
+                logging.error("Something went wrong in getmirrors.py. Please report this error.")
                 sys.exit(1)
-            tmp = re.match("\#(Server.*)",line)
+            tmp = re.match("\#(Server.*)", line)
             if tmp:
                 # replace $arch with x86_64
-                mirror = re.sub("\$arch","x86_64",tmp.group(1))
-                break 
+                mirror = re.sub("\$arch", "x86_64", tmp.group(1))
+                break
     if mirror:
         print(mirror)
     else:
         sys.exit(1)
+    logging.info("Editing the config file...")
     edit_conf(mirror)
 
 if __name__ == "__main__":
