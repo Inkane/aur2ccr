@@ -1,55 +1,10 @@
 import pyparsing
-from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString, White
-import re
+from pyparsing import Word, OneOrMore, Literal, alphanums, Optional, oneOf, nums, alphas, quotedString, printables, ZeroOrMore, Combine, nestedExpr, restOfLine, stringEnd, Group, Forward, LineEnd, QuotedString, White, delimitedList
+from variable_handling import VariableTracker
 # import logging
 
 
 # define some utility classes/functions/constants
-
-# TODO: decide if this should be in an extra file
-class VariableTracker:
-    """used to track variables in a shell """
-
-    def __init__(self):
-        self.variables = dict()
-
-        class VariableNotFoundException(Exception):
-            """raised when a variable was used before asignment"""
-
-        def substitute_variables(s, l, t):
-            # TODO: get rid of the exception hack
-            try:
-                if t[1] in self.variables:
-                    return self.variables[t[1]]
-                else:
-                    raise VariableNotFoundException("{} was not declared!".format(t[1]))
-            except IndexError:
-                if t[0] in self.variables:
-                    return self.variables[t[0]]
-            raise VariableNotFoundException("{} was not declared!".format(t[0]))
-
-        _simple_var = Literal("$") + Word(alphanums + "_-").setResultsName("varname")
-        _brace_substitute_part = Optional("/" + (Word(alphanums + "_-").setResultsName("orig"))
-                                 + Optional("/" + Word(alphanums + "_-!?/\\").setResultsName("new")))
-        _array_access = "[" + Word(nums + "@*").setResultsName("position") + "]"
-        # TODO: parse array correctly
-        _brace_var = Literal("${") + Word(alphanums + "_-").setResultsName("text") + _brace_substitute_part + Optional(_array_access) + "}"
-        _brace_var.setParseAction(lambda x: x if not x.new else re.sub(x.orig, x.new, x.text))
-        self.base_var = _simple_var | _brace_var
-        self.var = (Literal('"').suppress() + self.base_var + Literal('"').suppress()) | self.base_var
-        self.var.addParseAction(substitute_variables)
-
-    def track_variable(self, varname, value):
-        """track a variable, overriding previous existing values"""
-        self.variables[varname] = value
-
-    def substitute_variable(self, expression):
-        """replace all variables with their respective values, raises an error if one does not exist"""
-        return self.var.transformString(expression)
-        # what needs to be substituted:
-        # $foo, "$foo"
-        # ${foo}, "${foo}"
-        # ${foo[1]}, ${foo[@]}, ${foo[*]}
 
 var = VariableTracker()
 
@@ -73,8 +28,15 @@ def Array(name, body, body2=None):
         body2 = body
     return (Literal(name) + "=(" + body + ")" | Literal(name) + "[" + Word(nums) + "]" + body2)
 
+
 compare_operators = oneOf("< > =  >= <=")
 valname = alphanums + "-_${}+"
+
+# bash_list: 'foo'-{'bar1', 'bar2'} => foobar1 foobar2
+bash_list = opQuotedString(Word(alphanums), supress_quotes=True).setResultsName("base") + "-{" + delimitedList(opQuotedString(
+    Word(valname), supress_quotes=True).setResultsName("elements", listAllMatches=True)) + "}"
+# TODO: replace the functional code with something more readable
+bash_list.addParseAction(lambda x: map(lambda element: x.base + element, x.elements))
 
 # version number
 # vnum = Word(nums) + Optional(Word(alphanums + ".-_"))
