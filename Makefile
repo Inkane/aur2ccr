@@ -25,16 +25,16 @@ clean:
 # multilib MUST be x86_64, there is no i686 multilib repo. \n\
 \n\
 [community]\n\
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+Server = http://ftp.osuosl.org/pub/archlinux/community/os/i686\n\
 \n\
 [core]\n\
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+Server = http://ftp.osuosl.org/pub/archlinux/core/os/i686\n\
 \n\
 [extra]\n\
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+Server = http://ftp.osuosl.org/pub/archlinux/extra/os/i686\n\
 \n\
 [multilib]\n\
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n" > archrepos.pacman.conf
+Server = http://ftp.osuosl.org/pub/archlinux/multilib/os/x86_64\n" > archrepos.pacman.conf
 
 
 uninstall: # not ready for use
