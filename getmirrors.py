@@ -11,7 +11,7 @@ import re
 import fileinput
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='>>%(levelname)s:  %(message)s')
+logging.basicConfig(level=logging.INFO, format='>>%(levelname)s:  %(message)s')
 
 
 # needed for a trick to get a mirror if the user lives in an unknown country
@@ -122,7 +122,6 @@ def download(url):
 def get_location():
     logging.info("Determining your location...")
     regex_country = re.compile(r"""
-            ,\s # a comma followed by whitespace
               ((?P<oneword>([a-zA-Z])+?)\.) # one-word countries
             | (?P<twoword>(([a-zA-Z])+?\s[a-zA-Z]+))((\s([,(]))|\.) #two-word countries
             """, re.VERBOSE)
@@ -167,7 +166,8 @@ def main():
     if not quiet:
         usercountry = raw_input("Please enter your country: (leave blank to use {}): ".format(country))
         if usercountry:
-            country = alt_country_names[usercountry]
+            country = usercountry
+    country = alt_country_names[country]
     logging.debug("country={}".format(country))
 
     #create the fitting url
