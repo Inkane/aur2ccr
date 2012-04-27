@@ -177,7 +177,7 @@ def main():
     with download(url) as mirrorfile:
         logging.info("Determining the best mirror...")
         for line in mirrorfile:
-            if "is not one of the available choiches" in line:
+            if "is not one of the available choices" in line:
                 # should never happen
                 logging.error("Something went wrong in getmirrors.py. Please report this error.")
                 sys.exit(1)
