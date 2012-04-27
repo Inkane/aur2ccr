@@ -49,7 +49,7 @@ valid_countries = [
  ]
 alt_country_names = SmartDict()  # store alternate country names
 alt_country_names["United Kingdom"] = "GB"
-alt_country_names["Argentina"] = "Brazil"
+alt_country_names["Argentina"] = "BR"
 alt_country_names["USA"] = "US"
 alt_country_names["Australia"] = "AU"
 alt_country_names["Belarus"] = "BY"
