@@ -20,21 +20,21 @@ install: $(allfiles) install-man
 
 clean: 
 	rm -rf *.pyc $(manpages)
-	printf "# archrepos.pacman.conf\n# Tell pacman to look in the Arch Linux repositories. \
-# The arch (i686 or x86_64) is not really important, change it if you wish. \
+	printf "# archrepos.pacman.conf\n# Tell pacman to look in the Arch Linux repositories. \n\
+# The arch (i686 or x86_64) is not really important, change it if you wish. \n\
 # multilib MUST be x86_64, there is no i686 multilib repo. \n\
-
-[community]
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
-
-[core]
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
-
-[extra]
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686
-
-[multilib]
-Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64
+\n\
+[community]\n\
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+\n\
+[core]\n\
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+\n\
+[extra]\n\
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/i686\n\
+\n\
+[multilib]\n\
+Server = http://ftp.osuosl.org/pub/archlinux/$repo/os/x86_64\n" > archrepos.pacman.conf
 
 
 uninstall: # not ready for use
