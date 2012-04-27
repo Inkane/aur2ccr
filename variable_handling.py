@@ -2,14 +2,27 @@ import re
 from pyparsing import Literal, Word, alphanums, Optional, nums
 
 
+class VariableNotFoundException(Exception):
+    """raised when a variable was used before asignment"""
+
+
+class BashArray(list):
+    """Simulates bash arrays"""
+
+    def __call__(self, *index):
+        if (index == "*") or (index == "@"):
+            return self
+        elif not index:
+            return self[0]
+        else:
+            return self[index]
+
+
 class VariableTracker:
     """used to track variables in a shell """
 
     def __init__(self):
         self.variables = dict()
-
-        class VariableNotFoundException(Exception):
-            """raised when a variable was used before asignment"""
 
         def substitute_variables(s, l, t):
             # TODO: get rid of the exception hack

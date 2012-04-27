@@ -13,7 +13,7 @@ ac_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&*
 
 
 def opQuotedString(pattern, supress_quotes=False, combine=False):
-    "Matches a pattern surrounded by zero or one quote characters. Removes them if supress_quotes is True"
+    """Matches a pattern surrounded by zero or one quote characters. Removes them if supress_quotes is True"""
     snglquote = Literal("'").suppress() if supress_quotes else Literal("'")
     dblquote = Literal('"').suppress() if supress_quotes else Literal('"')
     if combine:
@@ -24,6 +24,7 @@ def opQuotedString(pattern, supress_quotes=False, combine=False):
 
 
 def Array(name, body, body2=None):
+    """used to match arrays"""
     if not body2:
         body2 = body
     return (Literal(name) + "=(" + body + ")" | Literal(name) + "[" + Word(nums) + "]" + body2)
@@ -95,7 +96,9 @@ descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listA
              + ZeroOrMore(':' + ZeroOrMore(Word(ac_chars)))))
 
 
-depends = Group(Array("depends", ZeroOrMore(dependency), dependency))
+depends = Group(Array("depends", (ZeroOrMore(dependency)), dependency))
+
+ndepends = "depends=(" + bash_list.setResultsName("pname", listAllMatches=True)) + ")"
 
 makedepends = Group(Array("makedepends", ZeroOrMore(dependency), dependency))
 
