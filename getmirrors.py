@@ -11,7 +11,7 @@ import re
 import fileinput
 import logging
 
-logging.basicConfig(level=logging.INFO, format='>>%(levelname)s:  %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='>>%(levelname)s:  %(message)s')
 
 
 # needed for a trick to get a mirror if the user lives in an unknown country
@@ -19,7 +19,7 @@ class SmartDict(dict):
     """return 'Any' as fallback if country is not in list"""
 
     def __missing__(self, key):
-        return 'Any'
+        return 'all'
 
 # get enviroment variables
 try:
@@ -45,11 +45,63 @@ valid_countries = [
  'New Caledonia',  'Norway', 'Poland', 'Portugal', 'Romania',
  'Russia', 'Singapore', 'Slovakia', 'South Korea', 'Spain',
  'Sweden', 'Switzerland', 'Taiwan', 'Turkey', 'Ukraine',
- 'United States', 'Uzbekistan', 'Any'
+ 'United States', 'Uzbekistan', 'all'
  ]
 alt_country_names = SmartDict()  # store alternate country names
-alt_country_names["United Kingdom"] = "Great Britain"
+alt_country_names["United Kingdom"] = "GB"
 alt_country_names["Argentina"] = "Brazil"
+alt_country_names["USA"] = "US"
+alt_country_names["Australia"] = "AU"
+alt_country_names["Belarus"] = "BY"
+alt_country_names["Belgium"] = "BE"
+alt_country_names["Brazil"] = "BR"
+alt_country_names["Bulgaria"] = "BG"
+alt_country_names["Canada"] = "CA"
+alt_country_names["Chile"] = "CL"
+alt_country_names["China"] = "CN"
+alt_country_names["Colombia"] = "CO"
+alt_country_names["Czech Republic"] = "CZ"
+alt_country_names["Denmark"] = "DK"
+alt_country_names["Estonia"] = "EE"
+alt_country_names["Finland"] = "FI"
+alt_country_names["France"] = "FR"
+alt_country_names["Germany"] = "DE"
+alt_country_names["Greece"] = "GR"
+alt_country_names["Hungary"] = "HU"
+alt_country_names["India"] = "IN"
+alt_country_names["Indonesia"] = "ID"
+alt_country_names["Ireland"] = "IE"
+alt_country_names["Israel"] = "IL"
+alt_country_names["Italy"] = "IT"
+alt_country_names["Japan"] = "JP"
+alt_country_names["Kazakhstan"] = "KZ"
+alt_country_names["Korea"] = "KR"
+alt_country_names["Latvia"] = "LV"
+alt_country_names["Luxembourg"] = "LU"
+alt_country_names["Macedonia"] = "MG"
+alt_country_names["Netherlands"] = "NL"
+alt_country_names["New Caledonia"] = "NC"
+alt_country_names["Norway"] = "NO"
+alt_country_names["Poland"] = "PL"
+alt_country_names["Portugal"] = "PT"
+alt_country_names["Romania"] = "RO"
+alt_country_names["Russian Federation"] = "RU"
+alt_country_names["Russian"] = "RU"
+alt_country_names["Serbia"] = "RS"  # RS?
+alt_country_names["Singapore"] = "SG"
+alt_country_names["Slovakia"] = "SK"
+alt_country_names["South Africa"] = "ZA"
+alt_country_names["Spain"] = "ES"
+alt_country_names["Sri Lanka"] = "LK"
+alt_country_names["Sweden"] = "SE"
+alt_country_names["Switzerland"] = "CH"
+alt_country_names["Taiwan"] = "TW"
+alt_country_names["Turkey"] = "TR"
+alt_country_names["Ukraine"] = "UA"
+alt_country_names["United States"] = "US"
+alt_country_names["Uzbekistan"] = "UZ"
+alt_country_names["Viet Nam"] = "VN"
+alt_country_names["Vietnam"] = "VN"
 
 # the webadresses of duckduckgo and arch linux
 duckduckgo = "https://duckduckgo.com/lite/?q=ip"
@@ -77,14 +129,19 @@ def get_location():
     with download(duckduckgo) as coun_file:
         country = ""
         for line in coun_file:
+            logging.debug(line)
             if "(your IP address)" in line:
                 try:
                     result = re.search(regex_country, line).groupdict()
+                    logging.debug("The result is {}".format(result))
                 except AttributeError:
+                    # if the regex doesn't match it returns None
+                    # None has no groupdict attribute, thus resulting in
+                    # AttributeError
                     # this should never fail until the duckduckgo website changes
                     logging.error(line)
                     logging.warn("Oh no! DuckDuckGo doesn't know where you live!\nWe'll use a generic server for now. For better performance you should run aur2ccr --setup\n")
-                    return "Any"
+                    return "all"
                 country = result["oneword"] if result["oneword"] else result["twoword"]
                 break
     # test if there is a mirror list for the country
@@ -110,7 +167,8 @@ def main():
     if not quiet:
         usercountry = raw_input("Please enter your country: (leave blank to use {}): ".format(country))
         if usercountry:
-            country = usercountry
+            country = alt_country_names[usercountry]
+    logging.debug("country={}".format(country))
 
     #create the fitting url
     url = archlinux.format(urllib2.quote(country))
