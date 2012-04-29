@@ -691,6 +691,7 @@ popopts() {  # populate variables, enumerate options and arguments
     debug "current option $1"
     case "$1" in
       "-1"|"--reset-pkgrel") resetrel=1;;
+      "--search") shift &&  aursearch "$1" && exit 0;;
       "-m"|"--maintainer") shift
         if validate_option "$1";  then
           maintainer="$1";
