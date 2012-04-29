@@ -289,7 +289,7 @@ namelookup() {  # see https://github.com/redhat69/aur2ccr/issues/1
   if [[ -r "$namesconf" ]]; then
     if grep -q "$1=..*" "$namesconf"; then
       apkgname="$1"
-      cpkgname="$(grep "^$1=..*" "$namesconf" | sed "s/$1=//")"
+      cpkgname="$(grep "^$1=..*" "$namesconf" | sed "s/$1=//; s/ //g")"
       return 0
     else
       return 1
