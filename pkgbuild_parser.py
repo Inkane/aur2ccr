@@ -37,6 +37,7 @@ valname = alphanums + "-_${}+"
 bash_list = opQuotedString(Word(alphanums), supress_quotes=True).setResultsName("base") + "-{" + delimitedList(opQuotedString(
     Word(valname), supress_quotes=True).setResultsName("elements", listAllMatches=True)) + "}"
 # TODO: replace the functional code with something more readable
+# joins the base with the extensions
 bash_list.addParseAction(lambda x: map(lambda element: x.base + element, x.elements))
 
 # version number
@@ -98,7 +99,11 @@ descriptive_dep = (opQuotedString(val_package_name.setResultsName("pname", listA
 
 depends = Group(Array("depends", (ZeroOrMore(dependency)), dependency))
 
-ndepends = "depends=(" + bash_list.setResultsName("pname", listAllMatches=True)) + ")"
+
+def pnamify(x):
+    return [Literal(i).setResultsName("pname") for i in x]
+
+ndepends = ("depends=(" + bash_list + ")")
 
 makedepends = Group(Array("makedepends", ZeroOrMore(dependency), dependency))
 
